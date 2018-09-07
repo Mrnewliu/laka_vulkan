@@ -2,6 +2,12 @@
 
 为Vulkan添加Cpp封装.
 
+## 版权
+
+zlib/libpng License.
+
+大致意思就是可以随便用,但不能剽窃,不能说是自己原创的.
+
 ## 目标
 
 不省略功能
@@ -19,4 +25,5 @@ https://vulkan.lunarg.com/doc/view/1.1.82.1/windows/vkspec.html
 ## 联系方式
 
 Q群:679351558
+
 做人要真诚,非诚勿扰.
