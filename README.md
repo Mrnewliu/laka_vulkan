@@ -22,7 +22,7 @@ zlib/libpng License.
 
 https://vulkan.lunarg.com/doc/view/1.1.82.1/windows/vkspec.html
 
-## 联系方式
+## 参与讨论
 
 Q群:679351558
 
