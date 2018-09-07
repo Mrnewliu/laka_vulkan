@@ -574,40 +574,6 @@ namespace laka {    namespace vk {
     {   }
 
 
-
-    //用于保存队列优先级的float数组.
-    struct My_device_queue_create_info {
-        shared_ptr<vector<Queue_create_info>> queue_priorities;
-        shared_ptr <vector<VkDeviceQueueCreateInfo>> queue_create_info;
-    };
-
-    My_device_queue_create_info
-        get_my_queue_create_info(std::vector<Queue_create_info>& info_)
-    {
-        My_device_queue_create_info dq_info;
-        dq_info.queue_priorities.reset(new vector<Queue_create_info>(info_));
-        dq_info.queue_create_info.reset(new vector<VkDeviceQueueCreateInfo>);
-
-        auto& q_create_info = *dq_info.queue_create_info;
-        q_create_info.resize(info_.size());
-
-        size_t count = 0;
-        for (auto&& q_create_info : *(dq_info.queue_create_info))
-        {
-            q_create_info = {
-                VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                nullptr,
-                VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT,
-                info_[count].queue_family_index,
-                static_cast<uint32_t>(info_[count].queue_priorities.size()),
-                &(*dq_info.queue_priorities)[count].queue_priorities[0]
-            };
-            count++;
-        }
-        return dq_info;
-    }
-
-
     PFN_vkVoidFunction Device::return_api(const char* api_name_)
     {
         init_show;
@@ -635,7 +601,6 @@ namespace laka {    namespace vk {
         , handle(handle_)
         , device_creator(device_creator_)
         , physical_devices(physical_devices_)
-        , q_priorities(quque_create_info_sptr_)
         , allocation_callbacks(device_creator_->allocation_callbacks)
     {
 #define load_vk_device_api(api_name__) \
@@ -643,9 +608,7 @@ namespace laka {    namespace vk {
 
         table_vk_api_device(load_vk_device_api ZK, , , YK FH);
         table_vk_api_cmd(load_vk_device_api ZK, , , YK FH);
-
-        auto& qs = *q_priorities;
-
+        
         //先不管队列 后边要用再完善
 
     }
@@ -669,33 +632,11 @@ namespace laka {    namespace vk {
         Pramater_choose_physical_device p1{ physical_device_ };
         if (choose_physical_device_function(p1) == false)
             return device_sptr;
-
-        std::vector<Queue_create_info> info(create_info_->queueCreateInfoCount);
         
-        int count = 0;
-        for (auto&& info_temp : info)
-        {
-            info_temp.queue_family_index = create_info_->pQueueCreateInfos[count].queueFamilyIndex;
-            
-            info_temp.queue_priorities.resize(create_info_->pQueueCreateInfos[count].queueCount);
-
-            int xxx = 0;
-            for (auto&& q_p:info_temp.queue_priorities)
-            {
-                q_p = create_info_->pQueueCreateInfos[count].pQueuePriorities[xxx];
-                xxx++;
-            }
-            count++;
-        }
-        auto my_q_info = get_my_queue_create_info(info);
-
-        VkDeviceCreateInfo create_info = *create_info_;
-        create_info.pQueueCreateInfos = create_info.queueCreateInfoCount > 0 ? &((*my_q_info.queue_create_info)[0]) : nullptr;
-
         VkDevice device_handle;
         auto ret = instance->api.vkCreateDevice(
             physical_device_.handle, 
-            &create_info, 
+            create_info_, 
             allocation_callbacks, 
             &device_handle
         );
@@ -710,8 +651,8 @@ namespace laka {    namespace vk {
                 instance, 
                 shared_from_this(), 
                 pds,
-                device_handle, 
-                my_q_info.queue_priorities
+                device_handle,
+                
             ));
 
         return device_sptr;

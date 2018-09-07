@@ -943,10 +943,8 @@ namespace laka { namespace vk {
             std::shared_ptr<Device_creator> device_creator_,
             std::vector<Physical_device*>& physical_devices_,
             VkDevice handle_,
-            std::shared_ptr<std::vector<Queue_create_info>>& quque_create_info_sptr_);
-
-        std::shared_ptr<std::vector<Queue_create_info>> q_priorities;
-
+            const VkAllocationCallbacks* allocation_callbacks_);
+        
         PFN_vkVoidFunction return_api(const char* api_name_);
     public:
         typedef std::shared_ptr<Device> Sptr;
