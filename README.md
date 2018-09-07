@@ -2,7 +2,7 @@
 
 为Vulkan添加Cpp封装.
 
-## 版权
+## 开源协议
 
 zlib/libpng License.
 
