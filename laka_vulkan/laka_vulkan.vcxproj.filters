@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="测试">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="封装">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="基础">
+      <UniqueIdentifier>{d8627b9c-2e27-419e-bc68-11464302bc1c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>测试</Filter>
+    </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>基础</Filter>
+    </ClCompile>
+    <ClCompile Include="vk_mean.cpp">
+      <Filter>基础</Filter>
+    </ClCompile>
+    <ClCompile Include="vk_shortcut.cpp">
+      <Filter>基础</Filter>
+    </ClCompile>
+    <ClCompile Include="vk.cpp">
+      <Filter>封装</Filter>
+    </ClCompile>
+    <ClCompile Include="test_all.cpp">
+      <Filter>测试</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common.h">
+      <Filter>基础</Filter>
+    </ClInclude>
+    <ClInclude Include="laka_vk_define.h">
+      <Filter>基础</Filter>
+    </ClInclude>
+    <ClInclude Include="vk_mean.h">
+      <Filter>基础</Filter>
+    </ClInclude>
+    <ClInclude Include="vk_bits.h">
+      <Filter>基础</Filter>
+    </ClInclude>
+    <ClInclude Include="classes.h">
+      <Filter>基础</Filter>
+    </ClInclude>
+    <ClInclude Include="vk.h">
+      <Filter>封装</Filter>
+    </ClInclude>
+    <ClInclude Include="test.h">
+      <Filter>测试</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vk.xlsx">
+      <Filter>资源文件</Filter>
+    </None>
+  </ItemGroup>
+</Project>
