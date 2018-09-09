@@ -2322,5 +2322,43 @@ namespace laka {    namespace vk {
     }
 
 
+	std::shared_ptr<Graphics_pipeline> Pipeline_layout::get_a_graphics_pipeline(
+		VkPipelineCreateFlags							flag_,
+		Render_pass&									render_pass_,
+		uint32_t										subpass,
+		VkPipelineCache*								cache_,
+		std::vector<std::shared_ptr<Shader_module>>		modules_,
+		const VkPipelineVertexInputStateCreateInfo*		vertex_input_state_,
+		const VkPipelineInputAssemblyStateCreateInfo*	input_assembly_state_,
+		const VkPipelineTessellationStateCreateInfo*	tessellation_state_,
+		const VkPipelineViewportStateCreateInfo*		view_port_state_,
+		const VkPipelineRasterizationStateCreateInfo*	rasterization_state_,
+		const VkPipelineMultisampleStateCreateInfo*		multi_sample_state_,
+		const VkPipelineDepthStencilStateCreateInfo*	depth_stencil_state_,
+		const VkPipelineColorBlendStateCreateInfo*		color_blend_state_,
+		const VkPipelineDynamicStateCreateInfo*			dynamic_satate_,
+		void* next_ = nullptr,
+		const VkAllocationCallbacks* allocator_ = nullptr)
+	{
+		shared_ptr<Graphics_pipeline> sptr;
+
+
+
+		return sptr;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
 }}

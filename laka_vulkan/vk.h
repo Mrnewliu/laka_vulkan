@@ -841,23 +841,23 @@ namespace laka { namespace vk {
     class Graphics_pipeline
         :public std::enable_shared_from_this<Graphics_pipeline>{
     private:
-        friend class Pipeline_cache;
+        friend class Pipeline_layout;
 
         Graphics_pipeline(
-        );
+			std::shared_ptr<Pipeline_cache> pipeline_cache_,
+			std::shared_ptr<Pipeline_layout> pipeline_layout_,
+			std::shared_ptr<std::shared_ptr<Shader_module>> shader_modules_,
+			std::shared_ptr<Render_pass> render_pass_);
 
         const VkAllocationCallbacks* allocation_callbacks;
     public:
         typedef std::shared_ptr<Graphics_pipeline> Sptr;
 
-
-
-
         ~Graphics_pipeline();
 
         std::shared_ptr<Pipeline_cache>     pipeline_cache;
         std::shared_ptr<Pipeline_layout>    pipeline_layout;
-        std::shared_ptr<Shader_module>      shader_module;
+        std::vector<std::shared_ptr<Shader_module>>      shader_modules;
         std::shared_ptr<Render_pass>        render_pass;
 
         VkPipeline handle;
@@ -887,15 +887,31 @@ namespace laka { namespace vk {
 
         std::shared_ptr<Compute_pipeline> get_a_compute_pipeline(
             VkPipelineCreateFlags               flags,
-            std::shared_ptr<Pipeline_cache>    pipeline_cache_,
+            std::shared_ptr<Pipeline_cache>		pipeline_cache_,
             std::shared_ptr<Shader_module>      module_,
             const char*                         pName,//shader 入口点名称
             VkShaderStageFlagBits               stage_flags,
             const VkSpecializationInfo*         pSpecializationInfo = nullptr,
-            const VkAllocationCallbacks* pAllocator_ = nullptr);
+            const VkAllocationCallbacks*		pAllocator_ = nullptr);
 
-        std::shared_ptr<Graphics_pipeline> get_a_graphics_pipeline(
-        );
+		std::shared_ptr<Graphics_pipeline> get_a_graphics_pipeline(
+			VkPipelineCreateFlags							flag_,
+			Render_pass&									render_pass_,
+			uint32_t										subpass,
+			VkPipelineCache*								cache_,
+			std::vector<std::shared_ptr<Shader_module>>		modules_,
+			const VkPipelineVertexInputStateCreateInfo*		vertex_input_state_,
+			const VkPipelineInputAssemblyStateCreateInfo*	input_assembly_state_,
+			const VkPipelineTessellationStateCreateInfo*	tessellation_state_,
+			const VkPipelineViewportStateCreateInfo*		view_port_state_,
+			const VkPipelineRasterizationStateCreateInfo*	rasterization_state_,
+			const VkPipelineMultisampleStateCreateInfo*		multi_sample_state_,
+			const VkPipelineDepthStencilStateCreateInfo*	depth_stencil_state_,
+			const VkPipelineColorBlendStateCreateInfo*		color_blend_state_,
+			const VkPipelineDynamicStateCreateInfo*			dynamic_satate_,
+			void* next_ = nullptr,
+			const VkAllocationCallbacks* allocator_ = nullptr);
+
 
 
         std::shared_ptr<Device> device;
