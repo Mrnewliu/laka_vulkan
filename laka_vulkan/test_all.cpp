@@ -111,7 +111,7 @@ void test_all()
         [](Pramater_choose_queue_family& choose_qf)->bool {
         for (auto&& qf_info : choose_qf.give_you_queue_family_info_)
         {
-            Queue_create_info fuck;
+            User_choose_queue_info fuck;
             fuck.queue_family_index = qf_info.index;
             fuck.queue_priorities.resize(10);
             for (auto&& qp : fuck.queue_priorities)

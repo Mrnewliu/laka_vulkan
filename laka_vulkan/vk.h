@@ -76,9 +76,11 @@ namespace laka { namespace vk {
 
 
 
-    struct Queue_create_info {
+    struct User_choose_queue_info {
         uint32_t queue_family_index;//想要从index队列族创建队列
         std::vector<float> queue_priorities;//每个队列的优先级
+		VkDeviceQueueCreateFlags create_flags;
+		VkQueueGlobalPriorityEXT global_priority;
     };
 
     struct Pramater_choose_physical_device {
@@ -86,7 +88,7 @@ namespace laka { namespace vk {
     };
     struct Pramater_choose_queue_family {
         std::vector<Queue_family_info> const& give_you_queue_family_info_;
-        std::vector<Queue_create_info>& waiting_for_your_filled_info_;
+        std::vector<User_choose_queue_info>& waiting_for_your_filled_info_;
     };
 
 
@@ -938,12 +940,12 @@ namespace laka { namespace vk {
         friend class Device_creator;
         friend class Instance;
 
-        Device(
-            std::shared_ptr<Instance> instance_, 
-            std::shared_ptr<Device_creator> device_creator_,
-            std::vector<Physical_device*>& physical_devices_,
-            VkDevice handle_,
-            const VkAllocationCallbacks* allocation_callbacks_);
+		Device(
+			std::shared_ptr<Instance> instance_,
+			std::shared_ptr<Device_creator> device_creator_,
+			std::vector<Physical_device*>& physical_devices_,
+			VkDevice handle_,
+			const VkAllocationCallbacks* allocation_callbacks_ = nullptr);
         
         PFN_vkVoidFunction return_api(const char* api_name_);
     public:

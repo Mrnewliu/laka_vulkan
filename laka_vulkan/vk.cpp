@@ -591,17 +591,17 @@ namespace laka {    namespace vk {
         return ret;
     }
 
-    Device::Device(
-        shared_ptr<Instance> instance_,
-        shared_ptr<Device_creator> device_creator_,
-        std::vector<Physical_device*>& physical_devices_,
-        VkDevice handle_,
-        shared_ptr<vector<Queue_create_info>>& quque_create_info_sptr_)
-        :instance(instance_)
-        , handle(handle_)
-        , device_creator(device_creator_)
-        , physical_devices(physical_devices_)
-        , allocation_callbacks(device_creator_->allocation_callbacks)
+	Device::Device(
+		shared_ptr<Instance> instance_,
+		shared_ptr<Device_creator> device_creator_,
+		std::vector<Physical_device*>& physical_devices_,
+		VkDevice handle_,
+		const VkAllocationCallbacks* allocation_callbacks_)
+		: instance(instance_)
+		, handle(handle_)
+		, device_creator(device_creator_)
+		, physical_devices(physical_devices_)
+		, allocation_callbacks(allocation_callbacks_)
     {
 #define load_vk_device_api(api_name__) \
     api.api_name__ = (PFN_##api_name__)return_api(#api_name__);
@@ -610,7 +610,6 @@ namespace laka {    namespace vk {
         table_vk_api_cmd(load_vk_device_api ZK, , , YK FH);
         
         //先不管队列 后边要用再完善
-
     }
 
     Device::~Device()
@@ -652,7 +651,7 @@ namespace laka {    namespace vk {
                 shared_from_this(), 
                 pds,
                 device_handle,
-                
+				allocation_callbacks
             ));
 
         return device_sptr;
@@ -683,9 +682,9 @@ namespace laka {    namespace vk {
             my_queue_familys[i].index = static_cast<uint32_t>(i);
             my_queue_familys[i].properties = (*queue_familys)[i];
         }
-        vector<Queue_create_info> my_queue_create_infos;
+        vector<User_choose_queue_info> user_choosed_q_create_infos;
 
-        Pramater_choose_queue_family choose_qf_parmater{ my_queue_familys, my_queue_create_infos };
+        Pramater_choose_queue_family choose_qf_parmater{ my_queue_familys, user_choosed_q_create_infos };
 
         if (choose_queue_family_function(choose_qf_parmater) == false)
         {
@@ -693,17 +692,45 @@ namespace laka {    namespace vk {
             return device_sptr;
         }
 
-        vector<VkDeviceQueueCreateInfo> queue_create_infos(my_queue_create_infos.size());
+		show_debug("构建队列create_info");
+		vector<VkDeviceQueueCreateInfo> q_create_infos(user_choosed_q_create_infos.size());
+		vector<VkDeviceQueueGlobalPriorityCreateInfoEXT> q_gpci_ext(user_choosed_q_create_infos.size());
 
-        auto my_q_info = get_my_queue_create_info(my_queue_create_infos);
+		for (size_t i = 0; i < user_choosed_q_create_infos.size(); i++)
+		{
+			void* pnext;
+			if (user_choosed_q_create_infos[i].global_priority == 0)
+			{
+				pnext = nullptr;
+			}
+			else
+			{
+				pnext = &q_gpci_ext[i];
+				q_gpci_ext[i] =
+				{
+					VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT,
+					nullptr,
+					user_choosed_q_create_infos[i].global_priority
+				};
+			}
+
+			q_create_infos[i] = {
+				VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+				pnext,
+				user_choosed_q_create_infos[i].create_flags,
+				user_choosed_q_create_infos[i].queue_family_index,
+				static_cast<uint32_t>(user_choosed_q_create_infos[i].queue_priorities.size()),
+				&user_choosed_q_create_infos[i].queue_priorities[0]
+			};
+		}
 
         VkDevice device_handle;
         VkDeviceCreateInfo device_create_info = {
             VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             nullptr,
             0,
-            static_cast<uint32_t>(queue_create_infos.size()),
-            queue_create_infos.size() > 0 ? &(*my_q_info.queue_create_info)[0] : nullptr,
+            static_cast<uint32_t>(q_create_infos.size()),
+            &q_create_infos[0],
             0,
             nullptr,
             enabled_extensions_ != nullptr ? static_cast<uint32_t>(enabled_extensions_->size()) : 0,
@@ -726,7 +753,12 @@ namespace laka {    namespace vk {
         vector<Physical_device*> pds{ &physical_device_ };
 
         device_sptr.reset(new Device(
-            instance, shared_from_this(), pds, device_handle, my_q_info.queue_priorities));
+            instance, 
+			shared_from_this(),
+			pds, 
+			device_handle, 
+			allocation_callbacks
+		));
 
         return device_sptr;
     }
@@ -776,40 +808,69 @@ namespace laka {    namespace vk {
             my_queue_familys[i].index = static_cast<uint32_t>(i);
             my_queue_familys[i].properties = (*queue_familys)[i];
         }
-        vector<Queue_create_info> my_queue_create_infos;
+        vector<User_choose_queue_info> user_choosed_q_create_infos;
 
-        Pramater_choose_queue_family choose_qf_parmater{ my_queue_familys, my_queue_create_infos };
+        Pramater_choose_queue_family choose_qf_parmater{ my_queue_familys, user_choosed_q_create_infos };
 
         if (choose_queue_family_function(choose_qf_parmater) == false)
         {
-            show_wrn("没有合适的队列族");
+            show_wrn("用户没有选择队列族");
             return device_sptr;
         }
 
-        vector<VkDeviceQueueCreateInfo> queue_create_infos(my_queue_create_infos.size());
+		VkDeviceGroupDeviceCreateInfo device_group_create_info = {
+			VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
+			nullptr,
+			static_cast<uint32_t>(ok_physical_devices_handle.size()),
+			&ok_physical_devices_handle[0]
+		};
 
-        VkDeviceGroupDeviceCreateInfo device_group_create_info = {
-            VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
-            nullptr,
-            static_cast<uint32_t>(ok_physical_devices_handle.size()),
-            &ok_physical_devices_handle[0]
-        };
+		show_debug("构建队列create_info");
+		vector<VkDeviceQueueCreateInfo> q_create_infos(user_choosed_q_create_infos.size());
+		vector<VkDeviceQueueGlobalPriorityCreateInfoEXT> q_gpci_ext(user_choosed_q_create_infos.size());
 
-        auto my_q_info = get_my_queue_create_info(my_queue_create_infos);
+		for (size_t i = 0; i < user_choosed_q_create_infos.size(); i++)
+		{
+			void* pnext;
+			if (user_choosed_q_create_infos[i].global_priority == 0)
+			{
+				pnext = nullptr;
+			}
+			else
+			{
+				pnext = &q_gpci_ext[i];
+				q_gpci_ext[i] =
+				{
+					VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT,
+					nullptr,
+					user_choosed_q_create_infos[i].global_priority
+				};
+			}
+
+			q_create_infos[i] = {
+				VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+				pnext,
+				user_choosed_q_create_infos[i].create_flags,
+				user_choosed_q_create_infos[i].queue_family_index,
+				static_cast<uint32_t>(user_choosed_q_create_infos[i].queue_priorities.size()),
+				&user_choosed_q_create_infos[i].queue_priorities[0]
+			};
+		}
 
         VkDevice device_handle;
         VkDeviceCreateInfo device_create_info = {
             VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             &device_group_create_info,
             0,
-            static_cast<uint32_t>(queue_create_infos.size()),
-            queue_create_infos.size() > 0 ? &(*my_q_info.queue_create_info)[0] : nullptr,
+            static_cast<uint32_t>(q_create_infos.size()),
+            &q_create_infos[0],
             0,
             nullptr,
             enabled_extensions_ != nullptr ? static_cast<uint32_t>(enabled_extensions_->size()) : 0,
             enabled_extensions_ != nullptr ? &(*enabled_extensions_)[0] : nullptr,
             features_
         };
+
         auto ret = instance->api.vkCreateDevice(
             ok_physical_device_list.front()->handle,
             &device_create_info,
@@ -836,7 +897,7 @@ namespace laka {    namespace vk {
             shared_from_this(),
             pds,
             device_handle,
-            my_q_info.queue_priorities
+			allocation_callbacks
         ));
 
         return device_sptr;
