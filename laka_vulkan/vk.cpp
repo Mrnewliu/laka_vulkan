@@ -2326,8 +2326,8 @@ namespace laka {    namespace vk {
 		VkPipelineCreateFlags							flag_,
 		Render_pass&									render_pass_,
 		uint32_t										subpass,
-		VkPipelineCache*								cache_,
-		std::vector<std::shared_ptr<Shader_module>>		modules_,
+		Pipeline_cache*									cache_,
+		std::vector<VkPipelineShaderStageCreateInfo>	stages_,
 		const VkPipelineVertexInputStateCreateInfo*		vertex_input_state_,
 		const VkPipelineInputAssemblyStateCreateInfo*	input_assembly_state_,
 		const VkPipelineTessellationStateCreateInfo*	tessellation_state_,
@@ -2338,11 +2338,54 @@ namespace laka {    namespace vk {
 		const VkPipelineColorBlendStateCreateInfo*		color_blend_state_,
 		const VkPipelineDynamicStateCreateInfo*			dynamic_satate_,
 		void* next_ = nullptr,
-		const VkAllocationCallbacks* allocator_ = nullptr)
+		const VkAllocationCallbacks* allocator_/* = nullptr*/)
 	{
 		shared_ptr<Graphics_pipeline> sptr;
 
+		auto the_allocator = allocator_ == nullptr ? allocation_callbacks : allocator_;
 
+		VkGraphicsPipelineCreateInfo info{
+			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			next_,
+			flag_,
+			static_cast<uint32_t>(stages_.size()),
+			&stages_[0],
+			vertex_input_state_,
+			input_assembly_state_,
+			tessellation_state_,
+			view_port_state_,
+			rasterization_state_,
+			multi_sample_state_,
+			depth_stencil_state_,
+			color_blend_state_,
+			dynamic_satate_,
+			handle,
+			render_pass_.handle,
+			subpass,
+			VK_NULL_HANDLE,
+			-1
+		};
+
+		VkPipeline pipeline_handle;
+
+		auto ret = device->api.vkCreateGraphicsPipelines(
+			device->handle,
+			cache_->handle,
+			1,
+			&info,
+			the_allocator,
+			&pipeline_handle
+		);
+		show_result(ret);
+
+		if (ret<0)
+		{
+			init_show;
+			show_wrn("´´½¨Graphics pipeline Ê§°Ü");
+			return sptr;
+		}
+
+		sptr.reset()
 
 		return sptr;
 	}

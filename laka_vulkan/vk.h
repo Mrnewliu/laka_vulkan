@@ -505,6 +505,9 @@ namespace laka { namespace vk {
         VkCommandBuffer handle;
     };
 
+
+
+
     class Command_buffers
         :public std::enable_shared_from_this<Command_buffers> {
     private:
@@ -855,10 +858,10 @@ namespace laka { namespace vk {
 
         ~Graphics_pipeline();
 
-        std::shared_ptr<Pipeline_cache>     pipeline_cache;
-        std::shared_ptr<Pipeline_layout>    pipeline_layout;
-        std::vector<std::shared_ptr<Shader_module>>      shader_modules;
-        std::shared_ptr<Render_pass>        render_pass;
+        std::shared_ptr<Pipeline_cache>					pipeline_cache;
+		std::shared_ptr<Pipeline_layout>				pipeline_layout;
+		std::shared_ptr<Render_pass>					render_pass;
+        std::vector<std::shared_ptr<Shader_module>>     shader_modules;
 
         VkPipeline handle;
     };
@@ -898,8 +901,8 @@ namespace laka { namespace vk {
 			VkPipelineCreateFlags							flag_,
 			Render_pass&									render_pass_,
 			uint32_t										subpass,
-			VkPipelineCache*								cache_,
-			std::vector<std::shared_ptr<Shader_module>>		modules_,
+			Pipeline_cache*									cache_,
+			std::vector<VkPipelineShaderStageCreateInfo>	stages_,
 			const VkPipelineVertexInputStateCreateInfo*		vertex_input_state_,
 			const VkPipelineInputAssemblyStateCreateInfo*	input_assembly_state_,
 			const VkPipelineTessellationStateCreateInfo*	tessellation_state_,
@@ -911,8 +914,6 @@ namespace laka { namespace vk {
 			const VkPipelineDynamicStateCreateInfo*			dynamic_satate_,
 			void* next_ = nullptr,
 			const VkAllocationCallbacks* allocator_ = nullptr);
-
-
 
         std::shared_ptr<Device> device;
         VkPipelineLayout handle;
