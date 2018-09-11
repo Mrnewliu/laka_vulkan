@@ -482,24 +482,48 @@ namespace laka { namespace vk {
         VkSamplerYcbcrConversion handle;
     };
 
+	
+	class Command_buffer_base {
+	protected:
+		Command_buffer_base(VkCommandBuffer handle_);
+		~Command_buffer_base();
+	public:
+		VkCommandBuffer handle;
 
-    class Command_buffer
-        :public std::enable_shared_from_this<Command_buffer> {
+		VkResult reset(VkCommandBufferResetFlags flags_);
+
+	};
+
+	class Command_buffer 
+		:public std::enable_shared_from_this<Command_buffer>
+		, Command_buffer_base{
+	private:
+		Command_buffer(
+			std::shared_ptr<Command_pool> command_pool_, VkCommandBuffer handle_);
+
+	public:
+		typedef std::shared_ptr<Command_buffer> Sptr;
+
+		~Command_buffer();
+
+		std::shared_ptr<Command_pool> command_pool;
+	};
+
+
+
+
+    class Command_buffer_old
+        :public std::enable_shared_from_this<Command_buffer_old> {
     private:
         friend class Device;
         friend class Command_pool;
 
-        Command_buffer(
+        Command_buffer_old(
             std::shared_ptr<Command_pool> command_pool_,VkCommandBuffer handle_);
     public:
-        typedef std::shared_ptr<Command_buffer> Sptr;
+        typedef std::shared_ptr<Command_buffer_old> Sptr;
 
-        ~Command_buffer();
-
-        VkResult reset(VkCommandBufferResetFlags flags_);
-
-
-
+        ~Command_buffer_old();
 
         std::shared_ptr<Command_pool> command_pool;
         VkCommandBuffer handle;
@@ -507,7 +531,12 @@ namespace laka { namespace vk {
 
 
 
-
+	/*
+		vkAllocateCommandBuffers可用于创建多个命令缓冲区。
+		如果任何这些命令缓冲区的创建失败，
+		则实现必须从此命令中销毁所有成功创建的命令缓冲区对象，
+		将pCommandBuffers阵列的所有条目设置为NULL并返回错误。
+	*/
     class Command_buffers
         :public std::enable_shared_from_this<Command_buffers> {
     private:
@@ -557,7 +586,7 @@ namespace laka { namespace vk {
 
         ~Command_pool();
 
-        std::shared_ptr<Command_buffer> get_a_command_buffer(
+        std::shared_ptr<Command_buffer_old> get_a_command_buffer(
             VkCommandPool           commandPool,
             VkCommandBufferLevel    level);
 

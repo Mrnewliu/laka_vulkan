@@ -45,7 +45,7 @@ class Image_view;
 class Descriptor_set;
 class Descriptor_sets;
 class Descriptor_update_template;
-class Command_buffer;
+class Command_buffer_old;
 class Command_buffers;
 class Frame_buffer;
 struct Queue_family_info;

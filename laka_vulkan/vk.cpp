@@ -1600,12 +1600,11 @@ namespace laka {    namespace vk {
         device->api.vkDestroyCommandPool(device->handle, handle, allocation_callbacks);
     }
 
-
-    std::shared_ptr<Command_buffer> Command_pool::get_a_command_buffer(
+    std::shared_ptr<Command_buffer_old> Command_pool::get_a_command_buffer(
         VkCommandPool           commandPool,
         VkCommandBufferLevel    level)
     {
-        shared_ptr<Command_buffer> command_buffer_sptr;
+        shared_ptr<Command_buffer_old> command_buffer_sptr;
 
         VkCommandBufferAllocateInfo info{
             VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -1623,19 +1622,29 @@ namespace laka {    namespace vk {
         if (ret < 0) return command_buffer_sptr;
 
         command_buffer_sptr.reset(
-            new Command_buffer(shared_from_this(),command_buffer_handle));
+            new Command_buffer_old(shared_from_this(),command_buffer_handle));
 
         return command_buffer_sptr;
     }
 
-    Command_buffer::Command_buffer(
+
+	Command_buffer_base::Command_buffer_base(VkCommandBuffer handle_)
+		:handle(handle_)
+	{	}
+
+	Command_buffer_base::~Command_buffer_base()
+	{	}
+
+
+
+    Command_buffer_old::Command_buffer_old(
         std::shared_ptr<Command_pool> command_pool_,
         VkCommandBuffer command_buffer_handle)
         :command_pool(command_pool_)
         ,handle(command_buffer_handle)
     {   }
 
-    Command_buffer::~Command_buffer()
+    Command_buffer_old::~Command_buffer_old()
     {
         init_show;
         show_function_name;
