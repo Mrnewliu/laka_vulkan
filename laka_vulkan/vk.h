@@ -510,6 +510,20 @@ namespace laka { namespace vk {
 	};
 
 
+	class Command_buffers 
+		:public std::enable_shared_from_this<Command_buffers>{
+	private:
+		Command_buffers(
+			std::shared_ptr<Command_pool> comman_pool_,
+			std::vector<VkCommandBuffer> handles_);
+	public:
+		typedef std::shared_ptr<Command_buffers> Sptr;
+
+		~Command_buffers();
+
+		std::shared_ptr<Command_pool> command_pool;
+	};
+
 
 
     class Command_buffer_old
@@ -529,27 +543,25 @@ namespace laka { namespace vk {
         VkCommandBuffer handle;
     };
 
-
-
 	/*
 		vkAllocateCommandBuffers可用于创建多个命令缓冲区。
 		如果任何这些命令缓冲区的创建失败，
 		则实现必须从此命令中销毁所有成功创建的命令缓冲区对象，
 		将pCommandBuffers阵列的所有条目设置为NULL并返回错误。
 	*/
-    class Command_buffers
-        :public std::enable_shared_from_this<Command_buffers> {
+    class Command_buffers_old
+        :public std::enable_shared_from_this<Command_buffers_old> {
     private:
         friend class Device;
         friend class Command_pool;
 
-        Command_buffers(
+        Command_buffers_old(
             std::shared_ptr<Command_pool> command_pool_,
             std::vector<VkCommandBuffer>& command_buffer_handles_);
     public:
-        typedef std::shared_ptr<Command_buffers> Sptr;
+        typedef std::shared_ptr<Command_buffers_old> Sptr;
 
-        ~Command_buffers();
+        ~Command_buffers_old();
 
         std::shared_ptr<Command_pool> command_pool;
         std::vector<VkCommandBuffer> handles;
@@ -590,7 +602,7 @@ namespace laka { namespace vk {
             VkCommandPool           commandPool,
             VkCommandBufferLevel    level);
 
-        std::shared_ptr<Command_buffers> get_a_command_buffers(
+        std::shared_ptr<Command_buffers_old> get_a_command_buffers(
             VkCommandPool           commandPool,
             VkCommandBufferLevel    level,
             uint32_t                command_buffer_count_);

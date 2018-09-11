@@ -1635,6 +1635,28 @@ namespace laka {    namespace vk {
 	Command_buffer_base::~Command_buffer_base()
 	{	}
 
+	Command_buffer::Command_buffer(
+		std::shared_ptr<Command_pool> command_pool_, VkCommandBuffer handle_)
+		:Command_buffer_base(handle_)
+		,command_pool(command_pool_)
+	{	}
+
+	Command_buffer::~Command_buffer()
+	{
+		init_show;
+		show_function_name;
+		command_pool->device->api.vkFreeCommandBuffers(
+			command_pool->device->handle,
+			command_pool->handle,
+			1,
+			&handle
+		);
+	}
+
+	
+	
+
+
 
 
     Command_buffer_old::Command_buffer_old(
@@ -1652,12 +1674,12 @@ namespace laka {    namespace vk {
             command_pool->device->handle, command_pool->handle, 1, &handle);
     }
 
-    std::shared_ptr<Command_buffers> Command_pool::get_a_command_buffers(
+    std::shared_ptr<Command_buffers_old> Command_pool::get_a_command_buffers(
         VkCommandPool           commandPool,
         VkCommandBufferLevel    level,
         uint32_t                command_buffer_count_)
     {
-        shared_ptr<Command_buffers> command_buffers_sptr;
+        shared_ptr<Command_buffers_old> command_buffers_sptr;
         VkCommandBufferAllocateInfo info{
             VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             NULL,
@@ -1674,21 +1696,21 @@ namespace laka {    namespace vk {
         show_result(ret);
         if (ret < 0) return command_buffers_sptr;
 
-        command_buffers_sptr.reset(new Command_buffers(
+        command_buffers_sptr.reset(new Command_buffers_old(
             shared_from_this(),command_buffer_handles
         ));
 
         return command_buffers_sptr;
     }
 
-    Command_buffers::Command_buffers(
+    Command_buffers_old::Command_buffers_old(
         shared_ptr<Command_pool> command_pool_,
         std::vector<VkCommandBuffer>& command_buffer_handles_)
         :command_pool(command_pool_)
         ,handles(command_buffer_handles_)
     {    }
 
-    Command_buffers::~Command_buffers()
+    Command_buffers_old::~Command_buffers_old()
     {
         init_show;
         show_function_name;

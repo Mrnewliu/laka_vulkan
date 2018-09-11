@@ -46,7 +46,7 @@ class Descriptor_set;
 class Descriptor_sets;
 class Descriptor_update_template;
 class Command_buffer_old;
-class Command_buffers;
+class Command_buffers_old;
 class Frame_buffer;
 struct Queue_family_info;
 
