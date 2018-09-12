@@ -481,23 +481,25 @@ namespace laka { namespace vk {
         std::shared_ptr<Device> device;
         VkSamplerYcbcrConversion handle;
     };
-
 	
+
+
 	class Command_buffer_base {
 	protected:
-		Command_buffer_base(VkCommandBuffer handle_);
-		~Command_buffer_base();
+		Command_buffer_base();
 	public:
+		
 		VkCommandBuffer handle;
 
 		VkResult reset(VkCommandBufferResetFlags flags_);
-
 	};
 
-	class Command_buffer 
+	class Command_buffer
 		:public std::enable_shared_from_this<Command_buffer>
-		, Command_buffer_base{
+		, Command_buffer_base {
 	private:
+		friend class Command_pool;
+
 		Command_buffer(
 			std::shared_ptr<Command_pool> command_pool_, VkCommandBuffer handle_);
 
@@ -509,66 +511,26 @@ namespace laka { namespace vk {
 		std::shared_ptr<Command_pool> command_pool;
 	};
 
-
-	class Command_buffers 
-		:public std::enable_shared_from_this<Command_buffers>{
+	class Command_buffers
+		:public std::enable_shared_from_this<Command_buffers> {
 	private:
+		friend class Command_pool;
+
 		Command_buffers(
 			std::shared_ptr<Command_pool> comman_pool_,
 			std::vector<VkCommandBuffer> handles_);
 	public:
 		typedef std::shared_ptr<Command_buffers> Sptr;
 
+		class Command_buffer :public Command_buffer_base{};
+
 		~Command_buffers();
 
+		std::vector<Command_buffer> elements;
 		std::shared_ptr<Command_pool> command_pool;
 	};
 
-
-
-    class Command_buffer_old
-        :public std::enable_shared_from_this<Command_buffer_old> {
-    private:
-        friend class Device;
-        friend class Command_pool;
-
-        Command_buffer_old(
-            std::shared_ptr<Command_pool> command_pool_,VkCommandBuffer handle_);
-    public:
-        typedef std::shared_ptr<Command_buffer_old> Sptr;
-
-        ~Command_buffer_old();
-
-        std::shared_ptr<Command_pool> command_pool;
-        VkCommandBuffer handle;
-    };
-
-	/*
-		vkAllocateCommandBuffers可用于创建多个命令缓冲区。
-		如果任何这些命令缓冲区的创建失败，
-		则实现必须从此命令中销毁所有成功创建的命令缓冲区对象，
-		将pCommandBuffers阵列的所有条目设置为NULL并返回错误。
-	*/
-    class Command_buffers_old
-        :public std::enable_shared_from_this<Command_buffers_old> {
-    private:
-        friend class Device;
-        friend class Command_pool;
-
-        Command_buffers_old(
-            std::shared_ptr<Command_pool> command_pool_,
-            std::vector<VkCommandBuffer>& command_buffer_handles_);
-    public:
-        typedef std::shared_ptr<Command_buffers_old> Sptr;
-
-        ~Command_buffers_old();
-
-        std::shared_ptr<Command_pool> command_pool;
-        std::vector<VkCommandBuffer> handles;
-    };
-
-
-
+	
     class Command_pool
         :public std::enable_shared_from_this<Command_pool> {
     private:
@@ -597,15 +559,22 @@ namespace laka { namespace vk {
         };
 
         ~Command_pool();
+		
+		std::shared_ptr<Command_buffer> get_a_command_buffer(
+			VkCommandPool           commandPool,
+			VkCommandBufferLevel    level);
 
-        std::shared_ptr<Command_buffer_old> get_a_command_buffer(
-            VkCommandPool           commandPool,
-            VkCommandBufferLevel    level);
+		/*
+			vkAllocateCommandBuffers可用于创建多个命令缓冲区。
+			如果任何这些命令缓冲区的创建失败，
+			则实现必须从此命令中销毁所有成功创建的命令缓冲区对象，
+			将pCommandBuffers阵列的所有条目设置为NULL并返回错误。
+		*/
+		std::shared_ptr<Command_buffers> get_a_command_buffers(
+			VkCommandPool           commandPool,
+			uint32_t                command_buffer_count_,
+			VkCommandBufferLevel    level);
 
-        std::shared_ptr<Command_buffers_old> get_a_command_buffers(
-            VkCommandPool           commandPool,
-            VkCommandBufferLevel    level,
-            uint32_t                command_buffer_count_);
 
         VkResult reset(VkCommandPoolResetFlags flags);
 
@@ -616,46 +585,51 @@ namespace laka { namespace vk {
         VkCommandPool handle;
     };
 
-    class Descriptor_set
-        :public std::enable_shared_from_this<Descriptor_set> {
-    private:
-        friend class Device;
-        friend class Descriptor_pool;
-
-        Descriptor_set(
-            std::shared_ptr<Descriptor_pool> descriptor_pool_,
-            VkDescriptorSet handle_);
-
-    public:
-        typedef std::shared_ptr<Descriptor_set> Sptr;
-
-        ~Descriptor_set();
-
-        void update_with_template(VkDescriptorUpdateTemplate template_, const void* data_);
-
-        std::shared_ptr<Descriptor_pool> descriptor_pool;
-        VkDescriptorSet handle;
-    };
-
-    class Descriptor_sets
-        :public std::enable_shared_from_this<Descriptor_sets> {
-    private:
-        friend class Device;
-        friend class Descriptor_pool;
-
-        Descriptor_sets(
-            std::shared_ptr<Descriptor_pool> descriptor_pool_,
-            std::vector<VkDescriptorSet>& handle_);
-    public:
-        typedef std::shared_ptr<Descriptor_sets> Sptr;
-
-        ~Descriptor_sets();
 
 
-        std::shared_ptr<Descriptor_pool> descriptor_pool;
-        std::vector<VkDescriptorSet> handles;
-    };
+	class Descriptor_set_base {
+	protected:
+		Descriptor_set_base();
+	public:
 
+		VkDescriptorSet handle;
+	};
+
+	class Descriptor_set 
+		:public std::enable_shared_from_this<Descriptor_set>
+		,Descriptor_set_base{
+	private:
+		friend Descriptor_pool;
+
+		Descriptor_set(
+			std::shared_ptr<Descriptor_pool> descriptor_pool_,
+			VkDescriptorSet handle_);
+	public:
+		typedef std::shared_ptr<Descriptor_set> Sptr;
+
+		~Descriptor_set();
+
+		std::shared_ptr<Descriptor_pool> descriptor_pool;
+	};
+
+	class Descriptor_sets
+		:public std::enable_shared_from_this<Descriptor_sets> {
+	private:
+		friend class Descriptor_pool;
+
+		Descriptor_sets(
+			std::shared_ptr<Descriptor_pool> descriptor_pool_,
+			std::vector<VkDescriptorSet>& handles_);
+	public:
+		typedef std::shared_ptr<Descriptor_sets> Sptr;
+
+		class Descriptor_set :public Descriptor_set_base {};
+
+		~Descriptor_sets();
+
+		std::vector<Descriptor_set> elements;
+		std::shared_ptr<Descriptor_pool> descriptor_pool;
+	};
 
     class Descriptor_pool
         :public std::enable_shared_from_this<Descriptor_pool> {
@@ -685,13 +659,15 @@ namespace laka { namespace vk {
 
         ~Descriptor_pool();
 
-        std::shared_ptr<Descriptor_set> get_a_descriptor_set(
-            VkDescriptorSetLayout set_layout,
-            const void* next_ = nullptr);
+		std::shared_ptr<Descriptor_set> get_a_descriptor_set(
+			VkDescriptorSetLayout set_layout,
+			const void* next_ = nullptr);
 
-        std::shared_ptr<Descriptor_sets> get_descriptor_sets(
-            std::vector<VkDescriptorSetLayout> set_layouts,
-            const void* next_ = nullptr);
+		std::shared_ptr<Descriptor_sets> get_descriptor_sets(
+			std::vector<VkDescriptorSetLayout>& set_layouts,
+			const void* next_ = nullptr);
+
+
 
         VkResult reset(VkDescriptorPoolResetFlags flags);
 
@@ -742,16 +718,57 @@ namespace laka { namespace vk {
     };
 
 
+	/*
+	typedef struct VkDescriptorUpdateTemplateCreateInfo {
+	uint32_t                                  descriptorUpdateEntryCount;
+	const VkDescriptorUpdateTemplateEntry*    pDescriptorUpdateEntries;
 
+
+	VkDescriptorUpdateTemplateType            templateType;
+		如果设置为VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET，
+			则它只能用于使用固定的descriptorSetLayout更新描述符集。 
+		如果设置为VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR，
+			则它只能用于使用提供的pipelineBindPoint，pipelineLayout和
+			set number推送描述符集。
+	
+	
+	VkDescriptorSetLayout                     descriptorSetLayout;
+		如果templateType不是VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET，则忽略此参数。
+		参数更新模板将使用的描述符集布局。 
+		必须使用此布局创建将通过新创建的描述符更新模板更新的所有描述符集。 
+		descriptorSetLayout是用于构建描述符更新模板的描述符集布局。 
+		将通过新创建的描述符更新模板更新的所有描述符集必须使用与
+		此布局匹配（与其相同或定义相同）的布局来创建。 
+
+	VkPipelineBindPoint                       pipelineBindPoint;
+		如果templateType不是VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR，则忽略此参数
+		pipelineBindPoint是一个VkPipelineBindPoint，指示描述符是由图形管道还是计算管道使用。
+
+	VkPipelineLayout                          pipelineLayout;
+		如果templateType不是VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR，则忽略此参数
+		pipelineLayout是一个VkPipelineLayout对象，用于对绑定进行编程。 
+
+	uint32_t                                  set;
+		如果templateType不是VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR，则忽略此参数
+		set是将更新的管道布局中设置的描述符的集合编号。 
+
+	} VkDescriptorUpdateTemplateCreateInfo;
+*/
     class Descriptor_update_template
         :public std::enable_shared_from_this<Descriptor_update_template> {
     private:
         friend class Descriptor_set_layout;
+		friend class Pipeline_layout;
 
         Descriptor_update_template(
             std::shared_ptr<Descriptor_set_layout> descriptor_set_layout_,
             VkDescriptorUpdateTemplate handle_,
             const VkAllocationCallbacks* pAllocator_);
+
+		Descriptor_update_template(
+			std::shared_ptr< Pipeline_layout> pipeline_layout_, 
+			VkDescriptorUpdateTemplate handle_,
+			const VkAllocationCallbacks* pAllocator_);
 
         const VkAllocationCallbacks* allocation_callbacks;
     public:
@@ -762,6 +779,8 @@ namespace laka { namespace vk {
 
 
         std::shared_ptr<Descriptor_set_layout> descriptor_set_layout;
+		std::shared_ptr<Pipeline_layout> pipeline_layout;
+
         VkDescriptorUpdateTemplate handle;
     };
 
@@ -881,7 +900,6 @@ namespace laka { namespace vk {
     };
 
     //还要做批量创建pipeline
-
     class Graphics_pipeline
         :public std::enable_shared_from_this<Graphics_pipeline>{
     private:
@@ -928,6 +946,11 @@ namespace laka { namespace vk {
 
         ~Pipeline_layout();
 
+		std::shared_ptr<Descriptor_update_template> get_a_descriptor_update_template(
+			std::vector<VkDescriptorUpdateTemplateEntry>& entrys_,
+			VkPipelineBindPoint bind_point_,
+			uint32_t set_,
+			const VkAllocationCallbacks* pAllocator_ = nullptr);
 
         std::shared_ptr<Compute_pipeline> get_a_compute_pipeline(
             VkPipelineCreateFlags               flags,

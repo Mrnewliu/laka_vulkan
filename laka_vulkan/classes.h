@@ -42,13 +42,22 @@ class Graphics_pipeline;
 class Graphics_pipelines;
 class Buffer_view;
 class Image_view;
+
 class Descriptor_set;
 class Descriptor_sets;
 class Descriptor_update_template;
-class Command_buffer_old;
-class Command_buffers_old;
+
+class Command_buffer_base;
+class Command_buffer;
+class Command_buffers;
+
 class Frame_buffer;
 struct Queue_family_info;
 
 struct Pramater_choose_physical_device;
 struct Pramater_choose_queue_family;
+
+
+
+class Command_buffer_old;
+class Command_buffers_old;

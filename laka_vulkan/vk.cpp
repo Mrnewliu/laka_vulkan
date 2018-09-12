@@ -1600,46 +1600,42 @@ namespace laka {    namespace vk {
         device->api.vkDestroyCommandPool(device->handle, handle, allocation_callbacks);
     }
 
-    std::shared_ptr<Command_buffer_old> Command_pool::get_a_command_buffer(
-        VkCommandPool           commandPool,
-        VkCommandBufferLevel    level)
-    {
-        shared_ptr<Command_buffer_old> command_buffer_sptr;
 
-        VkCommandBufferAllocateInfo info{
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            NULL,
-            handle,
-            level,
-            1
-        };
+	Command_buffer_base::Command_buffer_base(){}
 
-        VkCommandBuffer command_buffer_handle;
-        auto ret = device->api.vkAllocateCommandBuffers(
-            device->handle, &info, &command_buffer_handle);
-        show_result(ret);
+	std::shared_ptr<Command_buffer> Command_pool::get_a_command_buffer(
+		VkCommandPool           commandPool,
+		VkCommandBufferLevel    level)
+	{
+		shared_ptr<Command_buffer> command_buffer_sptr;
 
-        if (ret < 0) return command_buffer_sptr;
+		VkCommandBufferAllocateInfo info{
+			VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			NULL,
+			handle,
+			level,
+			1
+		};
 
-        command_buffer_sptr.reset(
-            new Command_buffer_old(shared_from_this(),command_buffer_handle));
+		VkCommandBuffer command_buffer_handle;
+		auto ret = device->api.vkAllocateCommandBuffers(
+			device->handle, &info, &command_buffer_handle);
+		show_result(ret);
 
-        return command_buffer_sptr;
-    }
+		if (ret < 0) return command_buffer_sptr;
 
+		command_buffer_sptr.reset(
+			new Command_buffer(shared_from_this(), command_buffer_handle));
 
-	Command_buffer_base::Command_buffer_base(VkCommandBuffer handle_)
-		:handle(handle_)
-	{	}
-
-	Command_buffer_base::~Command_buffer_base()
-	{	}
+		return command_buffer_sptr;
+	}
 
 	Command_buffer::Command_buffer(
 		std::shared_ptr<Command_pool> command_pool_, VkCommandBuffer handle_)
-		:Command_buffer_base(handle_)
-		,command_pool(command_pool_)
-	{	}
+		:command_pool(command_pool_)
+	{	
+		handle = handle_;
+	}
 
 	Command_buffer::~Command_buffer()
 	{
@@ -1654,74 +1650,83 @@ namespace laka {    namespace vk {
 	}
 
 	
-	
 
+	shared_ptr<Command_buffers> Command_pool::get_a_command_buffers(
+		VkCommandPool commandPool,
+		uint32_t command_buffer_count_,
+		VkCommandBufferLevel level)
+	{
+		shared_ptr<Command_buffers> sptr;
 
+		VkCommandBufferAllocateInfo info{
+			VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			NULL,
+			handle,
+			level,
+			command_buffer_count_
+		};
 
+		vector<VkCommandBuffer> buffer_handles(command_buffer_count_);
 
-    Command_buffer_old::Command_buffer_old(
-        std::shared_ptr<Command_pool> command_pool_,
-        VkCommandBuffer command_buffer_handle)
-        :command_pool(command_pool_)
-        ,handle(command_buffer_handle)
-    {   }
+		auto ret = device->api.vkAllocateCommandBuffers(
+			device->handle, &info, &buffer_handles[0]);
+		show_result(ret);
 
-    Command_buffer_old::~Command_buffer_old()
-    {
-        init_show;
-        show_function_name;
-        command_pool->device->api.vkFreeCommandBuffers(
-            command_pool->device->handle, command_pool->handle, 1, &handle);
-    }
+		if (ret < 0)
+		{
+			init_show;
+			show_err("创建 command buffer 失败");
 
-    std::shared_ptr<Command_buffers_old> Command_pool::get_a_command_buffers(
-        VkCommandPool           commandPool,
-        VkCommandBufferLevel    level,
-        uint32_t                command_buffer_count_)
-    {
-        shared_ptr<Command_buffers_old> command_buffers_sptr;
-        VkCommandBufferAllocateInfo info{
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            NULL,
-            handle,
-            level,
-            command_buffer_count_
-        };
+			for (size_t i = 0; i < buffer_handles.size(); i++)
+			{
+				//是否应当这样处理???
+				if (buffer_handles[i] != VK_NULL_HANDLE)
+				{
+					show_err("存在已创建的command buffer,逐个释放掉.");
+					device->api.vkFreeCommandBuffers(
+						device->handle, handle, 1, &buffer_handles[i]);
+				}
+			}
+			return sptr;
+		}
 
-        vector<VkCommandBuffer> command_buffer_handles(command_buffer_count_);
+		sptr.reset(
+			new Command_buffers(shared_from_this(), buffer_handles));
 
-        auto ret = device->api.vkAllocateCommandBuffers(
-            device->handle, &info, &command_buffer_handles[0]
-        );
-        show_result(ret);
-        if (ret < 0) return command_buffers_sptr;
+		return sptr;
+	}
+	Command_buffers::Command_buffers(
+		std::shared_ptr<Command_pool> comman_pool_, std::vector<VkCommandBuffer> handles_)
+		:elements(handles_.size())
+	{
+		size_t count = 0;
+		for (auto&& command_buffer : elements)
+		{
+			command_buffer.handle = handles_[count];
+			count++;
+		}
+	}
+	Command_buffers::~Command_buffers()
+	{
+		init_show;
+		show_function_name;
 
-        command_buffers_sptr.reset(new Command_buffers_old(
-            shared_from_this(),command_buffer_handles
-        ));
+		vector<VkCommandBuffer> buffer_handles(elements.size());
 
-        return command_buffers_sptr;
-    }
+		size_t count = 0;
+		for (auto&& command_buffer : elements)
+		{
+			buffer_handles[count] = command_buffer.handle;
+			count++;
+		}
 
-    Command_buffers_old::Command_buffers_old(
-        shared_ptr<Command_pool> command_pool_,
-        std::vector<VkCommandBuffer>& command_buffer_handles_)
-        :command_pool(command_pool_)
-        ,handles(command_buffer_handles_)
-    {    }
-
-    Command_buffers_old::~Command_buffers_old()
-    {
-        init_show;
-        show_function_name;
-        command_pool->device->api.vkFreeCommandBuffers(
-            command_pool->device->handle,
-            command_pool->handle,
-            static_cast<uint32_t>(handles.size()),
-            &handles[0]
-        );
-    }
-
+		command_pool->device->api.vkFreeCommandBuffers(
+			command_pool->device->handle,
+			command_pool->handle,
+			static_cast<uint32_t>(buffer_handles.size()),
+			&buffer_handles[0]
+		);
+	}
 
     shared_ptr<Descriptor_pool> Device::get_a_descriptor_pool(
         uint32_t                                max_sets_,
@@ -1776,97 +1781,145 @@ namespace laka {    namespace vk {
     }
 
 
-    shared_ptr<Descriptor_set> Descriptor_pool::get_a_descriptor_set(
-        VkDescriptorSetLayout set_layout,
-        const void* next_ /* = nullptr */)
-    {
-        shared_ptr<Descriptor_set> descriptor_sets_sptr;
+	Descriptor_set_base::Descriptor_set_base() {}
 
-        VkDescriptorSetAllocateInfo info{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            next_,
-            handle,
-            1,
-            &set_layout,
-        };
+	Descriptor_set::Descriptor_set(
+		std::shared_ptr<Descriptor_pool> descriptor_pool_, 
+		VkDescriptorSet handle_)
+		:descriptor_pool(descriptor_pool_)
+	{
+		handle = handle_;
+	}
+	Descriptor_set::~Descriptor_set()
+	{
+		init_show;
+		show_function_name;
+		descriptor_pool->device->api.vkFreeDescriptorSets(
+			descriptor_pool->device->handle,
+			descriptor_pool->handle,
+			1,
+			&handle
+		);
+	}
 
-        VkDescriptorSet descriptor_sets_handle;
-        auto ret = device->api.vkAllocateDescriptorSets(
-            device->handle, &info, &descriptor_sets_handle);
-        show_result(ret);
+	std::shared_ptr<Descriptor_set> Descriptor_pool::get_a_descriptor_set(
+		VkDescriptorSetLayout set_layout, 
+		const void* next_ /* = nullptr */)
+	{
+		shared_ptr<Descriptor_set> descriptor_sets_sptr;
 
-        if (ret < 0)
-        {
-            return descriptor_sets_sptr;
-        }
+		VkDescriptorSetAllocateInfo info{
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			next_,
+			handle,
+			1,
+			&set_layout,
+		};
 
-        descriptor_sets_sptr.reset(
-            new Descriptor_set(shared_from_this(), descriptor_sets_handle)
-        );
+		VkDescriptorSet descriptor_sets_handle;
+		auto ret = device->api.vkAllocateDescriptorSets(
+			device->handle, &info, &descriptor_sets_handle);
+		show_result(ret);
 
-        return descriptor_sets_sptr;
-    }
+		if (ret < 0)
+		{
+			init_show;
+			show_err("创建 descriptor set 失败");
+			return descriptor_sets_sptr;
+		}
 
-    Descriptor_set::Descriptor_set(
-        std::shared_ptr<Descriptor_pool> descriptor_pool_,
-        VkDescriptorSet handle_)
-        : descriptor_pool(descriptor_pool_)
-        , handle(handle_)
-    {   }
+		descriptor_sets_sptr.reset(
+			new Descriptor_set(shared_from_this(), descriptor_sets_handle)
+		);
 
-    Descriptor_set::~Descriptor_set()
-    {
-        init_show;
-        show_function_name;
-        descriptor_pool->device->api.vkFreeDescriptorSets(descriptor_pool->device->handle, descriptor_pool->handle, 1, &handle);
-    }
+		return descriptor_sets_sptr;
+	}
+
+	
+	Descriptor_sets::Descriptor_sets(
+		shared_ptr<Descriptor_pool> descriptor_pool_,
+		vector<VkDescriptorSet>& handles_)
+		:descriptor_pool(descriptor_pool_)
+		, elements(handles_.size())
+	{
+		for (size_t i; i < elements.size(); i++)
+		{
+			elements[i].handle = handles_[i];
+		}
+	}
 
 
-    std::shared_ptr<Descriptor_sets> Descriptor_pool::get_descriptor_sets(
-        std::vector<VkDescriptorSetLayout> set_layouts,
-        const void* next_/* = nullptr*/)
-    {
-        shared_ptr<Descriptor_sets> descriptor_sets_sptr;
+	Descriptor_sets::~Descriptor_sets()
+	{
+		vector<VkDescriptorSet> handles(elements.size());
+		for (size_t i = 0; i < elements.size(); i++)
+		{
+			handles[i] = elements[i].handle;
+		}
 
-        VkDescriptorSetAllocateInfo info{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            next_,
-            handle,
-            static_cast<uint32_t>(set_layouts.size()),
-            &(set_layouts[0]),
-        };
+		if (handles.size() <= 0)
+		{
+			return;
+		}
 
-        vector<VkDescriptorSet> descriptor_sets_handles(set_layouts.size());
-        auto ret = device->api.vkAllocateDescriptorSets(
-            device->handle, &info, &descriptor_sets_handles[0]);
-        show_result(ret);
+		descriptor_pool->device->api.vkFreeDescriptorSets(
+			descriptor_pool->device->handle,
+			descriptor_pool->handle,
+			static_cast<uint32_t>(elements.size()),
+			&handles[0]
+		);
+	}
 
-        if (ret < 0) return descriptor_sets_sptr;
 
-        descriptor_sets_sptr.reset(new Descriptor_sets(
-            shared_from_this(),descriptor_sets_handles
-        ));
-        return descriptor_sets_sptr;
-    }
+	shared_ptr<Descriptor_sets> Descriptor_pool::get_descriptor_sets(
+		std::vector<VkDescriptorSetLayout>& set_layouts,
+		const void* next_ /* = nullptr */)
+	{
+		shared_ptr<Descriptor_sets> descriptor_sets_sptr;
 
-    Descriptor_sets::Descriptor_sets(
-        shared_ptr<Descriptor_pool> descriptor_pool_,
-        std::vector<VkDescriptorSet>& handle_)
-        : descriptor_pool(descriptor_pool_)
-        , handles(handle_)
-    {   }
+		VkDescriptorSetAllocateInfo info{
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			next_,
+			handle,
+			1,
+			&set_layouts[0],
+		};
 
-    Descriptor_sets::~Descriptor_sets()
-    {
-        init_show;
-        show_function_name;
-        descriptor_pool->device->api.vkFreeDescriptorSets(
-            descriptor_pool->device->handle,
-            descriptor_pool->handle,
-            static_cast<uint32_t>(handles.size()),
-            &handles[0]
-        );
-    }
+		vector<VkDescriptorSet> descriptor_sets_handles(set_layouts.size());
+
+		auto ret = device->api.vkAllocateDescriptorSets(
+			device->handle, &info, &descriptor_sets_handles[0]);
+		show_result(ret);
+
+		if (ret < 0)
+		{
+			init_show;
+			show_err("创建 descriptor set 失败");
+
+			for (size_t i = 0; i < descriptor_sets_handles.size(); i++)
+			{
+				if (descriptor_sets_handles[i] != VK_NULL_HANDLE)
+				{
+					//正确处理方式???
+					show_err("存在已申请的descriptor set 逐个释放...");
+					device->api.vkFreeDescriptorSets(
+						device->handle,
+						handle,
+						1,
+						&descriptor_sets_handles[i]
+					);
+				}
+			}
+
+			return descriptor_sets_sptr;
+		}
+
+		descriptor_sets_sptr.reset(
+			new Descriptor_sets(shared_from_this(), descriptor_sets_handles)
+		);
+
+		return descriptor_sets_sptr;
+	}
 
 
     shared_ptr<Query_pool> Device::get_a_query_pool(
@@ -2028,6 +2081,14 @@ namespace laka {    namespace vk {
         , handle(handle_)
         , allocation_callbacks(pAllocator_)
     {   }
+	Descriptor_update_template::Descriptor_update_template(
+		std::shared_ptr< Pipeline_layout> pipeline_layout_,
+		VkDescriptorUpdateTemplate handle_,
+		const VkAllocationCallbacks* pAllocator_)
+		: pipeline_layout(pipeline_layout_)
+		, handle(handle_)
+		, allocation_callbacks(pAllocator_)
+	{	}
 
     Descriptor_update_template::~Descriptor_update_template()
     {
@@ -2269,6 +2330,51 @@ namespace laka {    namespace vk {
     }
 
 
+	std::shared_ptr<Descriptor_update_template> Pipeline_layout::get_a_descriptor_update_template(
+		std::vector<VkDescriptorUpdateTemplateEntry>& entrys_,
+		VkPipelineBindPoint bind_point_,
+		uint32_t set_,
+		const VkAllocationCallbacks* pAllocator_)
+	{
+		shared_ptr<Descriptor_update_template> descriptor_update_template_sptr;
+
+		auto the_allocator = pAllocator_ == nullptr ? allocation_callbacks : pAllocator_;
+
+		if (entrys_.size() <= 0)  return descriptor_update_template_sptr;
+
+		VkDescriptorUpdateTemplateCreateInfo info{
+			VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
+			NULL,
+			0,
+			static_cast<uint32_t>(entrys_.size()),
+			&(entrys_[0]),
+			VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR,
+			VK_NULL_HANDLE,
+			bind_point_,
+			handle,
+			set_
+		};
+
+		VkDescriptorUpdateTemplate descriptor_update_template_handle;
+		auto ret = device->api.vkCreateDescriptorUpdateTemplate(
+			device->handle, &info, the_allocator, &descriptor_update_template_handle);
+		show_result(ret);
+
+		if (ret < 0)
+		{
+			init_show;
+			show_wrn("创建 descriptor update template 失败");
+			return descriptor_update_template_sptr;
+		}
+
+		descriptor_update_template_sptr.reset(new Descriptor_update_template(
+			shared_from_this(), descriptor_update_template_handle, the_allocator
+		));
+
+		return descriptor_update_template_sptr;
+	}
+
+
 
     std::shared_ptr<Compute_pipeline> Pipeline_layout::get_a_compute_pipeline(
         VkPipelineCreateFlags               flags,
@@ -2368,7 +2474,7 @@ namespace laka {    namespace vk {
 		const VkPipelineDepthStencilStateCreateInfo*	depth_stencil_state_,
 		const VkPipelineColorBlendStateCreateInfo*		color_blend_state_,
 		const VkPipelineDynamicStateCreateInfo*			dynamic_satate_,
-		void* next_ = nullptr,
+		void* next_/* = nullptr*/,
 		const VkAllocationCallbacks* allocator_/* = nullptr*/)
 	{
 		shared_ptr<Graphics_pipeline> sptr;
@@ -2416,7 +2522,7 @@ namespace laka {    namespace vk {
 			return sptr;
 		}
 
-		sptr.reset()
+		//sptr.reset()
 
 		return sptr;
 	}
