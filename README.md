@@ -44,7 +44,7 @@ zlib/libpng License.
 
 https://vulkan.lunarg.com/doc/view/1.1.82.1/windows/vkspec.html
 
-对于本项目,我的整体感受是: 非常考验 阅读文档 以及 整理信息 的能力 其他方面没多高的难度.
+对于本项目,我的整体感受是: 非常考验 阅读文档 以及 整理信息 的能力和耐心 其他方面没多高的难度.
 
 ## 欢迎一起完善它 或者 参与讨论
 
