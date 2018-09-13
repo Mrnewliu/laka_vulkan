@@ -879,14 +879,16 @@ namespace laka { namespace vk {
     private:
         friend class Pipeline_layout;
 
-        Compute_pipeline(
-            std::shared_ptr<Pipeline_layout>    pipeline_layout_,
-            std::shared_ptr<Pipeline_cache>     pipeline_cache,
-            std::shared_ptr<Shader_module>      shader_module_,
-            VkPipeline handle_,
-            const VkAllocationCallbacks* allocation_callbacks_);
+		Compute_pipeline(
+			std::shared_ptr<Pipeline_layout>    pipeline_layout_,
+			std::shared_ptr<Pipeline_cache>     pipeline_cache,
+			std::shared_ptr<Shader_module>      shader_module_,
+			VkPipeline handle_,
+			const VkAllocationCallbacks* allocation_callbacks_,
+			int32_t base_index_ = -1);
 
         const VkAllocationCallbacks* allocation_callbacks;
+		int32_t index;
     public:
         typedef std::shared_ptr<Compute_pipeline> Sptr;
 

@@ -283,11 +283,11 @@ namespace laka {    namespace vk {
     }
 
     Instance::Sptr Instance::get_new(
-        std::vector<const char*>* enabled_extension_names_/* = nullptr*/,
+        vector<const char*>* enabled_extension_names_/* = nullptr*/,
         uint32_t api_version_/* = VK_MAKE_VERSION(1, 1, 82)*/,
         const void* next_/* = nullptr*/,
         VkAllocationCallbacks* allocator_/* = nullptr*/,
-        std::vector<const char*>* enabled_layer_names_/* = nullptr*/,
+        vector<const char*>* enabled_layer_names_/* = nullptr*/,
         const char* app_name_/* = "laka::vk"*/,
         uint32_t app_version_/* = VK_MAKE_VERSION(0, 0, 1)*/,
         const char* engine_name_/* = "laka::vk::engine"*/,
@@ -594,7 +594,7 @@ namespace laka {    namespace vk {
 	Device::Device(
 		shared_ptr<Instance> instance_,
 		shared_ptr<Device_creator> device_creator_,
-		std::vector<Physical_device*>& physical_devices_,
+		vector<Physical_device*>& physical_devices_,
 		VkDevice handle_,
 		const VkAllocationCallbacks* allocation_callbacks_)
 		: instance(instance_)
@@ -621,7 +621,7 @@ namespace laka {    namespace vk {
 
     //要将队列族信息存入设备对象中.
 
-    std::shared_ptr<Device> Device_creator::get_a_device(
+    shared_ptr<Device> Device_creator::get_a_device(
         Physical_device& physical_device_,
         VkDeviceCreateInfo* create_info_)
     {
@@ -657,13 +657,13 @@ namespace laka {    namespace vk {
         return device_sptr;
     }
 
-    std::shared_ptr<Device> Device_creator::get_a_device(
+    shared_ptr<Device> Device_creator::get_a_device(
         Physical_device& physical_device_,
-        std::vector<char*>* enabled_extensions_,
+        vector<char*>* enabled_extensions_,
         VkPhysicalDeviceFeatures* features_)
     {
         init_show;
-        std::shared_ptr<Device> device_sptr;
+        shared_ptr<Device> device_sptr;
 
         Pramater_choose_physical_device p1{ physical_device_ };
         if (choose_physical_device_function(p1) == false)
@@ -674,7 +674,7 @@ namespace laka {    namespace vk {
 
         auto queue_familys = physical_device_.get_queue_family_properties();
 
-        std::vector<Queue_family_info> my_queue_familys;
+        vector<Queue_family_info> my_queue_familys;
         my_queue_familys.resize(queue_familys->size());
 
         for (size_t i = 0; i < my_queue_familys.size(); i++)
@@ -764,15 +764,15 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Device> Device_creator::get_a_device(
+    shared_ptr<Device> Device_creator::get_a_device(
         Physical_device_group& physica_device_group_,
-        std::vector<char*>* enabled_extensions_,
+        vector<char*>* enabled_extensions_,
         VkPhysicalDeviceFeatures* features_)
     {
         init_show;
         show_debug("从设备组创建逻辑设备");
 
-        std::shared_ptr<Device> device_sptr;
+        shared_ptr<Device> device_sptr;
 
         list<Physical_device*> ok_physical_device_list;
         for (auto&& physical_device : physica_device_group_.physical_devices)
@@ -800,7 +800,7 @@ namespace laka {    namespace vk {
         }
         auto queue_familys = ok_physical_device_list.front()->get_queue_family_properties();
 
-        std::vector<Queue_family_info> my_queue_familys;
+        vector<Queue_family_info> my_queue_familys;
         my_queue_familys.resize(queue_familys->size());
 
         for (size_t i = 0; i < my_queue_familys.size(); i++)
@@ -904,7 +904,7 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr <Semaphore> Device::get_a_semaphore(
+    shared_ptr <Semaphore> Device::get_a_semaphore(
         const void* next_/* = nullptr*/,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
     {
@@ -933,7 +933,7 @@ namespace laka {    namespace vk {
         return semaphore_sptr;
     }
 
-    Semaphore::Semaphore(std::shared_ptr<Device> device_, VkSemaphore handle_, const VkAllocationCallbacks* pAllocator_)
+    Semaphore::Semaphore(shared_ptr<Device> device_, VkSemaphore handle_, const VkAllocationCallbacks* pAllocator_)
         :device(device_)
         ,handle(handle_)
         ,allocation_callbacks(pAllocator_)
@@ -947,7 +947,7 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr <Fence> Device::get_a_fence(
+    shared_ptr <Fence> Device::get_a_fence(
         const void* next_/* = nullptr*/,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
     {
@@ -976,7 +976,7 @@ namespace laka {    namespace vk {
         return fence_sptr;
     }
 
-    Fence::Fence(std::shared_ptr<Device> device_, VkFence handle_, const VkAllocationCallbacks* pAllocator_)
+    Fence::Fence(shared_ptr<Device> device_, VkFence handle_, const VkAllocationCallbacks* pAllocator_)
         : device(device_)
         , handle(handle_)
         , allocation_callbacks(pAllocator_)
@@ -990,7 +990,7 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr <Event> Device::get_a_event(
+    shared_ptr <Event> Device::get_a_event(
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
     {
         shared_ptr<Event> event_sptr;
@@ -1033,7 +1033,7 @@ namespace laka {    namespace vk {
 
 
 
-    std::shared_ptr<Shader_module> Device::get_a_shader_module(
+    shared_ptr<Shader_module> Device::get_a_shader_module(
         const uint32_t*     code_ptr_,
         size_t              code_size_,
         const void* next_ /*= nullptr*/,
@@ -1099,7 +1099,7 @@ namespace laka {    namespace vk {
 
 
 
-    std::shared_ptr<Device_memory> Device::get_a_device_memory(
+    shared_ptr<Device_memory> Device::get_a_device_memory(
         VkDeviceSize memory_size_,
         bool(*choose_memory_type_index_)(
             Pramater_choose_memory_type& pramater_choose_,
@@ -1175,7 +1175,7 @@ namespace laka {    namespace vk {
         Buffer::E_Create    create_flags_,
         Buffer::E_Usage	    usage_flags_,
         VkSharingMode		sharing_mode_,
-        std::vector<uint32_t> queue_family_indices_,
+        vector<uint32_t> queue_family_indices_,
         const void* next_/* = nullptr*/,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
     {
@@ -1229,7 +1229,7 @@ namespace laka {    namespace vk {
         );
     }
 
-    std::shared_ptr<Buffer_view> Buffer::get_a_buffer_view(
+    shared_ptr<Buffer_view> Buffer::get_a_buffer_view(
         VkFormat		format_,
         VkDeviceSize	offset_,
         VkDeviceSize	range_,
@@ -1291,7 +1291,7 @@ namespace laka {    namespace vk {
 
 
 
-    std::shared_ptr<Image> Device::get_a_image(
+    shared_ptr<Image> Device::get_a_image(
         Image::E_Create         create_fb_,
         VkImageType             imageType_,
         VkFormat                format_,
@@ -1302,7 +1302,7 @@ namespace laka {    namespace vk {
         Image::E_Usage          usage_fb_,
         VkSharingMode           sharingMode_,
         VkImageTiling           tiling_,
-        std::vector<uint32_t>	queue_family_indices_,
+        vector<uint32_t>	queue_family_indices_,
         VkImageLayout           initialLayout_,
         const void* next_ /*= nullptr*/,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
@@ -1359,7 +1359,7 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Image_view> Image::get_a_image_view(
+    shared_ptr<Image_view> Image::get_a_image_view(
         VkImageViewType			view_type_,
         VkFormat				format_,
         VkComponentMapping		components_,
@@ -1405,7 +1405,7 @@ namespace laka {    namespace vk {
     }
 
     Image_view::Image_view(
-        std::shared_ptr<Image> image_,
+        shared_ptr<Image> image_,
         VkImageView handle_,
         const VkAllocationCallbacks* pAllocator_)
         : image(image_)
@@ -1422,7 +1422,7 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Sampler> Device::get_a_sampler(
+    shared_ptr<Sampler> Device::get_a_sampler(
         VkFilter                magFilter,
         VkFilter                minFilter,
         VkSamplerMipmapMode     mipmapMode,
@@ -1493,7 +1493,7 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Sampler_Ycbcr_conversion> Device::get_a_sampler_ycbcr_conversion(
+    shared_ptr<Sampler_Ycbcr_conversion> Device::get_a_sampler_ycbcr_conversion(
         VkFormat                        format_,
         VkSamplerYcbcrModelConversion   ycbcrModel,
         VkSamplerYcbcrRange             ycbcrRange,
@@ -1534,7 +1534,7 @@ namespace laka {    namespace vk {
     }
 
     Sampler_Ycbcr_conversion::Sampler_Ycbcr_conversion(
-        std::shared_ptr<Device> device_,
+        shared_ptr<Device> device_,
         VkSamplerYcbcrConversion handle_,
         const VkAllocationCallbacks* pAllocator_)
         : device(device_)
@@ -1603,7 +1603,7 @@ namespace laka {    namespace vk {
 
 	Command_buffer_base::Command_buffer_base(){}
 
-	std::shared_ptr<Command_buffer> Command_pool::get_a_command_buffer(
+	shared_ptr<Command_buffer> Command_pool::get_a_command_buffer(
 		VkCommandPool           commandPool,
 		VkCommandBufferLevel    level)
 	{
@@ -1631,7 +1631,7 @@ namespace laka {    namespace vk {
 	}
 
 	Command_buffer::Command_buffer(
-		std::shared_ptr<Command_pool> command_pool_, VkCommandBuffer handle_)
+		shared_ptr<Command_pool> command_pool_, VkCommandBuffer handle_)
 		:command_pool(command_pool_)
 	{	
 		handle = handle_;
@@ -1696,7 +1696,7 @@ namespace laka {    namespace vk {
 		return sptr;
 	}
 	Command_buffers::Command_buffers(
-		std::shared_ptr<Command_pool> comman_pool_, std::vector<VkCommandBuffer> handles_)
+		shared_ptr<Command_pool> comman_pool_, vector<VkCommandBuffer> handles_)
 		:elements(handles_.size())
 	{
 		size_t count = 0;
@@ -1730,7 +1730,7 @@ namespace laka {    namespace vk {
 
     shared_ptr<Descriptor_pool> Device::get_a_descriptor_pool(
         uint32_t                                max_sets_,
-        std::vector<VkDescriptorPoolSize>&     pool_sizes_,
+        vector<VkDescriptorPoolSize>&     pool_sizes_,
         Descriptor_pool::E_Create               flags_,
         const VkAllocationCallbacks*            pAllocator_/* = nullptr*/)
     {
@@ -1765,7 +1765,7 @@ namespace laka {    namespace vk {
     }
 
     Descriptor_pool::Descriptor_pool(
-        std::shared_ptr<Device> device_, 
+        shared_ptr<Device> device_, 
         VkDescriptorPool handle_,
         const VkAllocationCallbacks* pAllocator_)
         : device(device_)
@@ -1784,7 +1784,7 @@ namespace laka {    namespace vk {
 	Descriptor_set_base::Descriptor_set_base() {}
 
 	Descriptor_set::Descriptor_set(
-		std::shared_ptr<Descriptor_pool> descriptor_pool_, 
+		shared_ptr<Descriptor_pool> descriptor_pool_, 
 		VkDescriptorSet handle_)
 		:descriptor_pool(descriptor_pool_)
 	{
@@ -1802,7 +1802,7 @@ namespace laka {    namespace vk {
 		);
 	}
 
-	std::shared_ptr<Descriptor_set> Descriptor_pool::get_a_descriptor_set(
+	shared_ptr<Descriptor_set> Descriptor_pool::get_a_descriptor_set(
 		VkDescriptorSetLayout set_layout, 
 		const void* next_ /* = nullptr */)
 	{
@@ -1872,7 +1872,7 @@ namespace laka {    namespace vk {
 
 
 	shared_ptr<Descriptor_sets> Descriptor_pool::get_descriptor_sets(
-		std::vector<VkDescriptorSetLayout>& set_layouts,
+		vector<VkDescriptorSetLayout>& set_layouts,
 		const void* next_ /* = nullptr */)
 	{
 		shared_ptr<Descriptor_sets> descriptor_sets_sptr;
@@ -1973,8 +1973,8 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Descriptor_set_layout> Device::get_a_descriptor_set_layout(
-        std::vector<VkDescriptorSetLayoutBinding>* bindings_,
+    shared_ptr<Descriptor_set_layout> Device::get_a_descriptor_set_layout(
+        vector<VkDescriptorSetLayoutBinding>* bindings_,
         Descriptor_set_layout::E_Create flags_,
         const void* next_,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
@@ -2015,7 +2015,7 @@ namespace laka {    namespace vk {
     }
 
     Descriptor_set_layout::Descriptor_set_layout(
-        std::shared_ptr<Device> device_,
+        shared_ptr<Device> device_,
         VkDescriptorSetLayout handle_,
         const VkAllocationCallbacks* pAllocator_)
         : device(device_)
@@ -2033,8 +2033,8 @@ namespace laka {    namespace vk {
 
 
 
-    std::shared_ptr<Descriptor_update_template> Descriptor_set_layout::get_a_descriptor_update_template(
-        std::vector<VkDescriptorUpdateTemplateEntry>& entrys_,
+    shared_ptr<Descriptor_update_template> Descriptor_set_layout::get_a_descriptor_update_template(
+        vector<VkDescriptorUpdateTemplateEntry>& entrys_,
         const VkAllocationCallbacks* pAllocator_)
     {
         shared_ptr<Descriptor_update_template> descriptor_update_template_sptr;
@@ -2082,7 +2082,7 @@ namespace laka {    namespace vk {
         , allocation_callbacks(pAllocator_)
     {   }
 	Descriptor_update_template::Descriptor_update_template(
-		std::shared_ptr< Pipeline_layout> pipeline_layout_,
+		shared_ptr< Pipeline_layout> pipeline_layout_,
 		VkDescriptorUpdateTemplate handle_,
 		const VkAllocationCallbacks* pAllocator_)
 		: pipeline_layout(pipeline_layout_)
@@ -2104,10 +2104,10 @@ namespace laka {    namespace vk {
 
 
 
-    std::shared_ptr<Render_pass> Device::get_a_render_pass(
-        std::vector<VkAttachmentDescription>* attachments,
-        std::vector<VkSubpassDescription>* subpasses,
-        std::vector<VkSubpassDependency>* dependencies,
+    shared_ptr<Render_pass> Device::get_a_render_pass(
+        vector<VkAttachmentDescription>* attachments,
+        vector<VkSubpassDescription>* subpasses,
+        vector<VkSubpassDependency>* dependencies,
         const void* next_/* = nullptr*/,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
     {
@@ -2163,8 +2163,8 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Frame_buffer> Render_pass::get_a_frame_buffer(
-        std::vector<VkImageView>* attachments,
+    shared_ptr<Frame_buffer> Render_pass::get_a_frame_buffer(
+        vector<VkImageView>* attachments,
         uint32_t width,
         uint32_t height,
         uint32_t layers,
@@ -2209,7 +2209,7 @@ namespace laka {    namespace vk {
     }
 
     Frame_buffer::Frame_buffer(
-        std::shared_ptr<Render_pass> render_pass_,
+        shared_ptr<Render_pass> render_pass_,
         VkFramebuffer handle_,
         const VkAllocationCallbacks* pAllocator_)
         : render_pass(render_pass_)
@@ -2226,8 +2226,8 @@ namespace laka {    namespace vk {
     }
 
 
-    std::shared_ptr<Pipeline_layout> Device::get_a_pipeline_layout(
-        std::vector<VkPushConstantRange>* push_constant_ranges_,
+    shared_ptr<Pipeline_layout> Device::get_a_pipeline_layout(
+        vector<VkPushConstantRange>* push_constant_ranges_,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
     {
         shared_ptr<Pipeline_layout> pipeline_layout_sptr;
@@ -2281,7 +2281,7 @@ namespace laka {    namespace vk {
             device->handle, handle, allocation_callbacks);
     }
 
-    std::shared_ptr<Pipeline_cache> Device::get_a_pipeline_cache(
+    shared_ptr<Pipeline_cache> Device::get_a_pipeline_cache(
         size_t      initial_data_size /*= 0*/,
         const void* initial_data_/* = nullptr*/,
         const VkAllocationCallbacks* pAllocator_/* = nullptr*/)
@@ -2330,8 +2330,8 @@ namespace laka {    namespace vk {
     }
 
 
-	std::shared_ptr<Descriptor_update_template> Pipeline_layout::get_a_descriptor_update_template(
-		std::vector<VkDescriptorUpdateTemplateEntry>& entrys_,
+	shared_ptr<Descriptor_update_template> Pipeline_layout::get_a_descriptor_update_template(
+		vector<VkDescriptorUpdateTemplateEntry>& entrys_,
 		VkPipelineBindPoint bind_point_,
 		uint32_t set_,
 		const VkAllocationCallbacks* pAllocator_)
@@ -2376,10 +2376,10 @@ namespace laka {    namespace vk {
 
 
 
-    std::shared_ptr<Compute_pipeline> Pipeline_layout::get_a_compute_pipeline(
+    shared_ptr<Compute_pipeline> Pipeline_layout::get_a_compute_pipeline(
         VkPipelineCreateFlags               flags,
         shared_ptr<Pipeline_cache>         pipeline_cache_,
-        std::shared_ptr<Shader_module>      module_,
+        shared_ptr<Shader_module>      module_,
         const char*                         rukou_name_,
         VkShaderStageFlagBits               stage_flags,
         const VkSpecializationInfo* pSpecializationInfo /* = nullptr */, 
@@ -2438,16 +2438,18 @@ namespace laka {    namespace vk {
     }
 
     Compute_pipeline::Compute_pipeline(
-        std::shared_ptr<Pipeline_layout> pipeline_layout_,
-        std::shared_ptr<Pipeline_cache> pipeline_cache_,
-        std::shared_ptr<Shader_module> shader_module_,
+        shared_ptr<Pipeline_layout> pipeline_layout_,
+        shared_ptr<Pipeline_cache> pipeline_cache_,
+        shared_ptr<Shader_module> shader_module_,
         VkPipeline handle_,
-        const VkAllocationCallbacks* allocation_callbacks_)
+        const VkAllocationCallbacks* allocation_callbacks_,
+		int32_t base_index_ /*= -1*/)
         : pipeline_layout(pipeline_layout_)
         , pipeline_cache(pipeline_cache_)
         , shader_module(shader_module_)
         , handle(handle_)
         , allocation_callbacks(allocation_callbacks_)
+		, index(base_index_)
     {   }
 
     Compute_pipeline::~Compute_pipeline()
@@ -2459,12 +2461,12 @@ namespace laka {    namespace vk {
     }
 
 
-	std::shared_ptr<Graphics_pipeline> Pipeline_layout::get_a_graphics_pipeline(
+	shared_ptr<Graphics_pipeline> Pipeline_layout::get_a_graphics_pipeline(
 		VkPipelineCreateFlags							flag_,
 		Render_pass&									render_pass_,
 		uint32_t										subpass,
 		Pipeline_cache*									cache_,
-		std::vector<VkPipelineShaderStageCreateInfo>	stages_,
+		vector<VkPipelineShaderStageCreateInfo>	stages_,
 		const VkPipelineVertexInputStateCreateInfo*		vertex_input_state_,
 		const VkPipelineInputAssemblyStateCreateInfo*	input_assembly_state_,
 		const VkPipelineTessellationStateCreateInfo*	tessellation_state_,
