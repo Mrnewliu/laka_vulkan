@@ -201,8 +201,8 @@ namespace laka { namespace vk {
     public:
         //VkDevice device_handle;
         VkQueue handle;
+		uint32_t index;
         uint32_t family_index;
-        float* priorities_ptr;
 
         struct {
             table_vk_api_queue(vk_fun ZK, , , YK FH);
@@ -437,6 +437,8 @@ namespace laka { namespace vk {
 
         std::shared_ptr<std::vector<VkSparseImageMemoryRequirements>> get_sparse_memory_requirements();
 
+		VkSubresourceLayout get_subresource_layout(const VkImageSubresource*);
+
         std::shared_ptr<Device> device;
         VkImage handle;
     };
@@ -483,6 +485,8 @@ namespace laka { namespace vk {
     };
 	
 
+	
+	struct Device_api;
 
 	class Command_buffer_base {
 	protected:
@@ -490,8 +494,12 @@ namespace laka { namespace vk {
 	public:
 		
 		VkCommandBuffer handle;
+		Device_api* api;
 
 		VkResult reset(VkCommandBufferResetFlags flags_);
+		VkResult end();
+
+
 	};
 
 	class Command_buffer
@@ -563,6 +571,8 @@ namespace laka { namespace vk {
 		std::shared_ptr<Command_buffer> get_a_command_buffer(
 			VkCommandPool           commandPool,
 			VkCommandBufferLevel    level);
+
+
 
 		/*
 			vkAllocateCommandBuffers可用于创建多个命令缓冲区。
@@ -669,7 +679,7 @@ namespace laka { namespace vk {
 
 
 
-        VkResult reset(VkDescriptorPoolResetFlags flags);
+		VkResult reset(VkDescriptorPoolResetFlags flags);
 
         std::shared_ptr<Device> device;
         VkDescriptorPool handle;
@@ -866,7 +876,7 @@ namespace laka { namespace vk {
             uint32_t layers,
             const VkAllocationCallbacks* pAllocator_ = nullptr);
 
-        std::shared_ptr<VkExtent2D> get_area_granularity();
+        VkExtent2D get_area_granularity();
 
         std::shared_ptr<Device> device;
         VkRenderPass handle;
@@ -885,19 +895,33 @@ namespace laka { namespace vk {
 			std::shared_ptr<Shader_module>      shader_module_,
 			VkPipeline handle_,
 			const VkAllocationCallbacks* allocation_callbacks_,
-			int32_t base_index_ = -1);
+			int32_t base_index_ = -1,
+			std::shared_ptr<Compute_pipeline>	compute_pipeline_ = nullptr);
 
         const VkAllocationCallbacks* allocation_callbacks;
+		
 		int32_t index;
     public:
         typedef std::shared_ptr<Compute_pipeline> Sptr;
 
         ~Compute_pipeline();
 
+		std::shared_ptr<Compute_pipeline> get_a_compute_pipeline(
+			VkPipelineCreateFlags               flags,
+			std::shared_ptr<Pipeline_cache>		pipeline_cache_,
+			std::shared_ptr<Shader_module>		module_,
+			const char*                         rukou_name_,
+			VkShaderStageFlagBits               stage_flags,
+			std::shared_ptr< Pipeline_layout>	pipeline_layout_ = nullptr,
+			const VkSpecializationInfo*			pSpecializationInfo  = nullptr ,
+			const VkAllocationCallbacks*		pAllocator_  = nullptr );
 
         std::shared_ptr<Pipeline_layout>    pipeline_layout;
         std::shared_ptr<Pipeline_cache>     pipeline_cache;
-        std::shared_ptr<Shader_module>      shader_module;
+		std::shared_ptr<Shader_module>      shader_module;
+		
+		std::shared_ptr<Compute_pipeline>	base_pipeline;
+
         VkPipeline  handle;
     };
 
@@ -1018,6 +1042,11 @@ namespace laka { namespace vk {
         uint32_t memory_type_index;
     };
 
+	struct Device_api {
+		table_vk_api_device(vk_fun ZK, , , YK FH);
+		table_vk_api_cmd(vk_fun ZK, , , YK FH);
+	};
+
     class Device : public std::enable_shared_from_this<Device> {
     private:
         friend class Device_creator;
@@ -1036,10 +1065,7 @@ namespace laka { namespace vk {
 
         ~Device();
 
-        struct {
-            table_vk_api_device(vk_fun ZK, , , YK FH);
-            table_vk_api_cmd(vk_fun ZK, , , YK FH);
-        }api;
+        Device_api api;
 
         const VkAllocationCallbacks* allocation_callbacks;
 
@@ -1175,8 +1201,13 @@ namespace laka { namespace vk {
             const VkAllocationCallbacks* pAllocator_ = nullptr);
 
 
-        
+		VkResult invalidate_mapped_memory_ranges(
+			std::vector<VkMappedMemoryRange>& mapped_memory_ranges_);
 
+		VkPeerMemoryFeatureFlags* get_peer_memory_feature(
+			uint32_t                                    heapIndex_,
+			uint32_t                                    localDeviceIndex_,
+			uint32_t                                    remoteDeviceIndex_);
 
         VkResult wait_idle();
         VkResult wait_for_fences(std::vector<VkFence>& fences_, bool wait_all_, uint64_t timeout_);
@@ -1202,6 +1233,7 @@ namespace laka { namespace vk {
         VkSemaphore handle;
     };
 
+	
     class Fence :public std::enable_shared_from_this<Fence> {
     private:
         friend class Device;
@@ -1218,7 +1250,14 @@ namespace laka { namespace vk {
         ~Fence();
 
         VkResult reset();
-        VkResult get_status();
+        
+		VkResult reset(std::vector<VkFence>& fences_);
+		
+		VkResult get_status();
+
+		VkResult wait(uint64_t timeout_);
+
+		VkResult wait(bool wait_all_, uint64_t timeout_, std::vector<VkFence>& fences_);
 
         std::shared_ptr<Device> device;
         VkFence handle;
@@ -1287,10 +1326,11 @@ namespace laka { namespace vk {
         ~Device_memory();
 
         VkDeviceSize get_commitment();
-        VkResult map_memory(
-            VkDeviceSize                                offset,
-            VkDeviceSize                                size,
-            VkMemoryMapFlags                            flags);
+
+        void* map_memory(
+            VkDeviceSize                                offset_,
+            VkDeviceSize                                size_,
+            VkMemoryMapFlags                            flags_);
 
         void unmap_memory();
 

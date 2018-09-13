@@ -610,6 +610,9 @@ namespace laka {    namespace vk {
         table_vk_api_cmd(load_vk_device_api ZK, , , YK FH);
         
         //先不管队列 后边要用再完善
+
+
+
     }
 
     Device::~Device()
@@ -1635,6 +1638,7 @@ namespace laka {    namespace vk {
 		:command_pool(command_pool_)
 	{	
 		handle = handle_;
+		api = &(command_pool->device->api);
 	}
 
 	Command_buffer::~Command_buffer()
@@ -1703,6 +1707,7 @@ namespace laka {    namespace vk {
 		for (auto&& command_buffer : elements)
 		{
 			command_buffer.handle = handles_[count];
+			command_buffer.api = &(command_pool->device->api);
 			count++;
 		}
 	}
@@ -1995,6 +2000,10 @@ namespace laka {    namespace vk {
             size,
             point_temp
         };
+
+		/*
+		此处可以使用vkGetDescriptorSetLayoutSupport 检查是否能够创建
+		*/
 
         VkDescriptorSetLayout descriptor_set_layout_handle;
         auto ret = api.vkCreateDescriptorSetLayout(
@@ -2374,12 +2383,75 @@ namespace laka {    namespace vk {
 		return descriptor_update_template_sptr;
 	}
 
+	//需要注意:base_index
+	shared_ptr<Compute_pipeline> Compute_pipeline::get_a_compute_pipeline(
+		VkPipelineCreateFlags flags,
+		std::shared_ptr<Pipeline_cache> pipeline_cache_,
+		std::shared_ptr<Shader_module> module_,
+		const char* rukou_name_,
+		VkShaderStageFlagBits stage_flags,
+		std::shared_ptr<Pipeline_layout> pipeline_layout_,
+		const VkSpecializationInfo* pSpecializationInfo /* = nullptr */,
+		const VkAllocationCallbacks* pAllocator_/* = nullptr */)
+	{
+		shared_ptr<Compute_pipeline> sptr;
+		auto the_allocator = pAllocator_ == nullptr ? allocation_callbacks : pAllocator_;
 
+		VkComputePipelineCreateInfo info
+		{
+			VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+			nullptr,
+			flags,
+			{
+				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+				nullptr,
+				0,
+				stage_flags,
+				module_->handle,
+				rukou_name_,
+				pSpecializationInfo
+			},
+			pipeline_layout_ ? pipeline_layout_->handle : pipeline_layout->handle,
+			handle,
+			index + 1
+		};
+
+		VkPipeline pipeline_handle;
+
+		auto ret = pipeline_layout->device->api.vkCreateComputePipelines(
+			pipeline_layout->device->handle,
+			pipeline_cache_->handle,
+			index,
+			&info,
+			the_allocator,
+			&pipeline_handle
+		);
+
+		show_result(ret);
+		if (ret < 0)
+		{
+			init_show;
+			show_wrn("创建 compute pipelines 失败");
+			return sptr;
+		}
+
+		sptr.reset(new Compute_pipeline(
+			pipeline_layout_,
+			pipeline_cache_,
+			module_,
+			pipeline_handle,
+			the_allocator,
+			index + 1,
+			shared_from_this()
+		));
+
+		return sptr;
+	}
 
     shared_ptr<Compute_pipeline> Pipeline_layout::get_a_compute_pipeline(
         VkPipelineCreateFlags               flags,
-        shared_ptr<Pipeline_cache>         pipeline_cache_,
-        shared_ptr<Shader_module>      module_,
+        shared_ptr<Pipeline_cache>			pipeline_cache_,
+        shared_ptr<Shader_module>			module_,
         const char*                         rukou_name_,
         VkShaderStageFlagBits               stage_flags,
         const VkSpecializationInfo* pSpecializationInfo /* = nullptr */, 
@@ -2443,13 +2515,15 @@ namespace laka {    namespace vk {
         shared_ptr<Shader_module> shader_module_,
         VkPipeline handle_,
         const VkAllocationCallbacks* allocation_callbacks_,
-		int32_t base_index_ /*= -1*/)
+		int32_t base_index_ /*= -1*/,
+		std::shared_ptr<Compute_pipeline>	base_pipeline_ /*= nullptr*/)
         : pipeline_layout(pipeline_layout_)
         , pipeline_cache(pipeline_cache_)
         , shader_module(shader_module_)
         , handle(handle_)
         , allocation_callbacks(allocation_callbacks_)
 		, index(base_index_)
+		, base_pipeline(base_pipeline_)
     {   }
 
     Compute_pipeline::~Compute_pipeline()
@@ -2532,15 +2606,231 @@ namespace laka {    namespace vk {
 
 
 
+	//========================================================================
+	VkResult Device::invalidate_mapped_memory_ranges(
+		std::vector<VkMappedMemoryRange>& mapped_memory_ranges_)
+	{
+		auto ret = api.vkInvalidateMappedMemoryRanges(
+			handle,
+			static_cast<uint32_t>(mapped_memory_ranges_.size()),
+			mapped_memory_ranges_.size()>0?&mapped_memory_ranges_[0]:nullptr
+		);
+		show_result(ret);
 
+		return ret;
+	}
 
+	VkResult Device::wait_idle()
+	{
+		auto ret = api.vkDeviceWaitIdle(handle);
+		show_result(ret);
 
+		return ret;
+	}
 
+	VkDeviceSize Device_memory::get_commitment()
+	{
+		VkDeviceSize sult;
 
+		device->api.vkGetDeviceMemoryCommitment(
+			device->handle, handle, &sult);
 
+		return sult;
+	}
 
+	void* Device_memory::map_memory(
+		VkDeviceSize offset_, 
+		VkDeviceSize size_,
+		VkMemoryMapFlags flags_)
+	{
+		void* p;
+		auto ret = device->api.vkMapMemory(device->handle, handle, offset_, size_, flags_,&p);
+		show_result(ret);
 
+		if (ret<0)
+		{
+			init_show;
+			show_err("map memory失败");
+			p = nullptr;
+		}
 
+		return p;
+	}
 
+	void Device_memory::unmap_memory()
+	{
+		init_show;
+		show_function_name;
+		device->api.vkUnmapMemory(device->handle, handle);
+	}
+
+	VkMemoryRequirements Buffer::get_memory_requirements()
+	{
+		VkMemoryRequirements sult;
+
+		device->api.vkGetBufferMemoryRequirements(device->handle, handle, &sult);
+
+		return sult;
+	}
+
+	std::shared_ptr<std::vector<VkSparseImageMemoryRequirements>> 
+		Image::get_sparse_memory_requirements()
+	{
+		std::shared_ptr<std::vector<VkSparseImageMemoryRequirements>> sult(
+			new std::vector<VkSparseImageMemoryRequirements>);
+
+		uint32_t count;
+		device->api.vkGetImageSparseMemoryRequirements(
+			device->handle, handle, &count, nullptr);
+
+		sult->resize(count);
+
+		device->api.vkGetImageSparseMemoryRequirements(
+			device->handle, handle, &count, &(*sult)[0]
+		);
+
+		return sult;
+	}
     
+	VkSubresourceLayout Image::get_subresource_layout(const VkImageSubresource* subresource_)
+	{
+		VkSubresourceLayout sult;
+		device->api.vkGetImageSubresourceLayout(device->handle, handle, subresource_, &sult);
+		return sult;
+	}
+
+	VkMemoryRequirements Image::get_image_memory_requirements()
+	{
+		VkMemoryRequirements sult;
+		device->api.vkGetImageMemoryRequirements(device->handle, handle, &sult);
+		return sult;
+	}
+
+
+	VkResult Command_pool::reset(VkCommandPoolResetFlags flags)
+	{
+		auto ret = device->api.vkResetCommandPool(device->handle, handle, flags);
+		show_result(ret);
+		if (ret<0)
+		{
+			init_show;
+			show_err("reset command pool 失败");
+		}
+		return ret;
+	}
+
+
+	void Command_pool::trim(VkCommandPoolTrimFlags flags)
+	{
+		device->api.vkTrimCommandPool(device->handle, handle, flags);
+	}
+
+
+	VkResult Command_buffer_base::reset(VkCommandBufferResetFlags flags_)
+	{
+		auto ret = api->vkResetCommandBuffer(handle, flags_);
+		show_result(ret);
+
+		return ret;
+	}
+
+	VkResult Command_buffer_base::end()
+	{
+		auto ret = api->vkEndCommandBuffer(handle);
+		show_result(ret);
+
+		return ret;
+	}
+
+
+	VkResult Descriptor_pool::reset(VkDescriptorPoolResetFlags flags)
+	{
+		auto ret = device->api.vkResetDescriptorPool(device->handle, handle, flags);
+		show_result(ret);
+
+		return ret;
+	}
+
+	VkResult Fence::reset()
+	{
+		auto ret = device->api.vkResetFences(device->handle, 1, &handle);
+		show_result(ret);
+		return ret;
+	}
+	VkResult Fence::reset(vector<VkFence>& fences_)
+	{
+		auto ret = device->api.vkResetFences(
+			device->handle,
+			static_cast<uint32_t>(fences_.size()),
+			&fences_[0]
+		);
+		show_result(ret);
+		return ret;
+	}
+
+	VkResult Fence::get_status()
+	{
+		auto ret = device->api.vkGetFenceStatus(device->handle, handle);
+		show_result(ret);
+		return ret;
+	}
+
+
+	VkResult Fence::wait(uint64_t timeout_)
+	{
+		auto ret = device->api.vkWaitForFences(
+			device->handle, 
+			1,
+			&handle,
+			VK_TRUE,
+			timeout_
+		);
+		show_result(ret);
+		return ret;
+	}
+
+	VkResult Fence::wait(
+		bool wait_all_,
+		uint64_t timeout_,
+		std::vector<VkFence>& fences_)
+	{
+		auto ret = device->api.vkWaitForFences(
+			device->handle,
+			static_cast<uint32_t>(fences_.size()),
+			fences_.size() > 0 ? &fences_[0] : nullptr,
+			wait_all_ ? VK_TRUE : VK_FALSE ,
+			timeout_
+		);
+		show_result(ret);
+		return ret;
+	}
+
+	VkResult Event::set()
+	{
+		auto ret = device->api.vkSetEvent(device->handle, handle);
+		show_result(ret);
+		return ret;
+	}
+
+	VkResult Event::get_event_status()
+	{
+		auto ret = device->api.vkGetEventStatus(device->handle, handle);
+		show_result(ret);
+		return ret;
+	}
+
+	void Event::reset()
+	{
+		device->api.vkResetEvent(device->handle, handle);
+	}
+
+	VkExtent2D Render_pass::get_area_granularity()
+	{
+		VkExtent2D sult;
+		device->api.vkGetRenderAreaGranularity(device->handle, handle, &sult);
+		return sult;
+	}
+
+
+
 }}

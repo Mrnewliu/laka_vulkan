@@ -131,7 +131,15 @@ void test_all()
 
     auto event_temp = device->get_a_event();
 
-    auto buffer = device->get_a_buffer(2048, Buffer::E_Create::E_sparse_residency | Buffer::E_Create::E_sparse_binding, Buffer::E_Usage::E_vertex_buffer | Buffer::E_Usage::E_conditional_rendering, VkSharingMode::VK_SHARING_MODE_BEGIN_RANGE, {0,1});
+    auto buffer = device->get_a_buffer(
+		2048, 
+		Buffer::E_Create::E_sparse_residency 
+		| Buffer::E_Create::E_sparse_binding, 
+		Buffer::E_Usage::E_vertex_buffer 
+		| Buffer::E_Usage::E_conditional_rendering, 
+		VkSharingMode::VK_SHARING_MODE_BEGIN_RANGE, 
+		{0,1}
+	);
 
 
 }
