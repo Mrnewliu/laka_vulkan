@@ -28,8 +28,8 @@ zlib/libpng License.</br>
 *    处理生成依赖</br>
 
 将要做的:</br>
-* 确定API归属</br></br>
-* 为pNext提供封装</br></br>
+* 确定API归属
+* 为pNext提供封装
 * 简化参数</br>
       能扁平的扁平之</br>
       能采用封装层的参数 就采用封装层
